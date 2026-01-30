@@ -1,0 +1,8 @@
+{
+  "name": "LPI Al Hidayah",
+  "description": "A comprehensive high school portal featuring news, projects, journals, facilities, and academic profiles.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
