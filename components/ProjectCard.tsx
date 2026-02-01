@@ -39,7 +39,7 @@ const ProjectCard: React.FC<ProjectCardProps> = memo(({ project, levelConfig }) 
                 </div>
                 <h3 className="text-2xl font-black text-slate-900 mb-4 leading-tight group-hover:text-islamic-gold-600 transition-colors">{project.title}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed mb-8 flex-1 line-clamp-2">
-                    {project.description}
+                    {project.description.replace(/<[^>]+>/g, '')}
                 </p>
                 <div className="pt-6 border-t border-slate-50 flex items-center gap-3">
                     <div className={`w-9 h-9 rounded-xl ${bgClass} flex items-center justify-center text-[10px] font-black text-white shadow-lg`}>

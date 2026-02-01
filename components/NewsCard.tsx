@@ -12,8 +12,8 @@ interface NewsCardProps {
 const NewsCard: React.FC<NewsCardProps> = memo(({ news, levelConfig }) => {
     // Determine theme based on news level
     const newsTheme =
-        news.jenjang === 'SMA'
-            ? levelConfig['MA']
+        news.jenjang === 'SMPT'
+            ? levelConfig['SMPT']
             : levelConfig[news.jenjang];
 
     return (

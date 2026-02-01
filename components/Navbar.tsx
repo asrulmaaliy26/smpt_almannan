@@ -202,6 +202,16 @@ const Navbar: React.FC = () => {
             </div>
           </div>
 
+          {/* Admin Link - Mobile */}
+          <Link
+            to="/admin"
+            className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-black rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all"
+            onClick={() => setIsOpen(false)}
+          >
+            <UserCog className="w-5 h-5" />
+            Admin Panel
+          </Link>
+
           <a
             href="https://ppdb.almannan.id/"
             target="_blank"

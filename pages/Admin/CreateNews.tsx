@@ -1,5 +1,5 @@
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -20,33 +20,55 @@ import {
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { generateNewsArticle } from '../../services/gemini';
-import { createNews } from '../../services/api';
+import { createNews, fetchNewsCategories } from '../../services/api';
 import { EducationLevel } from '../../types';
 import { LevelContext } from '../../App';
 import { useLevelConfig } from '../../hooks/useLevelConfig';
+import { useToast } from '../../components/ToastProvider';
 
 const CreateNews: React.FC = () => {
   const navigate = useNavigate();
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
+  const toast = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [briefSketch, setBriefSketch] = useState('');
 
   const [title, setTitle] = useState('');
   const [excerpt, setExcerpt] = useState('');
-  const [category, setCategory] = useState<'Prestasi' | 'Kegiatan' | 'Akademik' | 'Pengumuman'>('Kegiatan');
+  const [categories, setCategories] = useState<string[]>([]);
+  const [category, setCategory] = useState<string>('Kegiatan');
   const [level, setLevel] = useState<'Nasional' | 'Internasional' | 'Provinsi' | 'Kabupaten' | 'Kecamatan' | 'Kota' | 'Sekolah'>('Sekolah');
   const DEFAULT_JENJANG = import.meta.env.VITE_DEFAULT_JENJANG || 'UMUM';
   const isLocked = DEFAULT_JENJANG !== 'UMUM';
-  const [jenjang, setJenjang] = useState<EducationLevel>(isLocked ? (DEFAULT_JENJANG as EducationLevel) : (activeLevel === 'UMUM' ? 'SMA' : activeLevel));
+  const [jenjang, setJenjang] = useState<EducationLevel>(isLocked ? (DEFAULT_JENJANG as EducationLevel) : (activeLevel === 'UMUM' ? 'MA' : activeLevel));
   const [content, setContent] = useState('');
   const [mainImage, setMainImage] = useState<File | null>(null);
   const [gallery, setGallery] = useState<File[]>([]);
 
+  // Fetch categories from API
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const cats = await fetchNewsCategories();
+        setCategories(cats);
+        // Set default category if available
+        if (cats.length > 0 && !category) {
+          setCategory(cats[0]);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        // Fallback to default categories
+        setCategories(['Prestasi', 'Kegiatan', 'Akademik', 'Pengumuman']);
+      }
+    };
+    loadCategories();
+  }, []);
+
   const handleSmartAIWrite = async () => {
     if (!briefSketch.trim()) {
-      alert("Masukkan poin-poin kegiatan terlebih dahulu.");
+      toast.warning("Masukkan poin-poin kegiatan terlebih dahulu.");
       return;
     }
 
@@ -64,7 +86,7 @@ const CreateNews: React.FC = () => {
         setExcerpt(excerptText);
       }
     } catch (error) {
-      alert("Maaf, AI gagal menghasilkan berita. Silakan coba lagi.");
+      toast.error("Maaf, AI gagal menghasilkan berita. Silakan coba lagi.");
     } finally {
       setIsGenerating(false);
     }
@@ -99,15 +121,15 @@ const CreateNews: React.FC = () => {
 
     // Validation
     if (!title.trim()) {
-      alert('Judul harus diisi');
+      toast.warning('Judul harus diisi');
       return;
     }
     if (!excerpt.trim()) {
-      alert('Ringkasan harus diisi');
+      toast.warning('Ringkasan harus diisi');
       return;
     }
     if (!content.trim()) {
-      alert('Konten harus diisi');
+      toast.warning('Konten harus diisi');
       return;
     }
 
@@ -124,7 +146,7 @@ const CreateNews: React.FC = () => {
         content,
         date: today,
         category,
-        jenjang: jenjang.toLowerCase(), // Convert to lowercase for API
+        jenjang: jenjang,
         level: category === 'Prestasi' ? level : undefined,
         main_image: mainImage || undefined,
         gallery: validGallery.length > 0 ? validGallery : undefined,
@@ -135,10 +157,10 @@ const CreateNews: React.FC = () => {
       sessionStorage.removeItem('admin_news_cats');
       sessionStorage.removeItem('admin_news_timestamp');
 
-      alert(response.message || 'Berita berhasil ditambahkan!');
+      toast.success(response.message || 'Berita berhasil ditambahkan!');
       navigate('/admin/news');
     } catch (error: any) {
-      alert(error.message || 'Gagal menyimpan berita');
+      toast.error(error.message || 'Gagal menyimpan berita');
       console.error('Error creating news:', error);
     } finally {
       setIsSubmitting(false);
@@ -212,12 +234,15 @@ const CreateNews: React.FC = () => {
                   <select
                     className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-slate-700 appearance-none outline-none"
                     value={category}
-                    onChange={(e) => setCategory(e.target.value as any)}
+                    onChange={(e) => setCategory(e.target.value)}
                   >
-                    <option value="Prestasi">Prestasi</option>
-                    <option value="Kegiatan">Kegiatan</option>
-                    <option value="Akademik">Akademik</option>
-                    <option value="Pengumuman">Pengumuman</option>
+                    {categories.length > 0 ? (
+                      categories.map((cat) => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))
+                    ) : (
+                      <option value="">Loading...</option>
+                    )}
                   </select>
                 </div>
                 <div>
@@ -225,18 +250,28 @@ const CreateNews: React.FC = () => {
                     <Layers className="w-4 h-4" /> Jenjang Pendidikan
                   </label>
                   <select
-                    className={`w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-slate-700 appearance-none outline-none ${isLocked ? 'opacity-75 cursor-not-allowed' : ''}`}
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-slate-700 appearance-none outline-none"
                     value={jenjang}
                     onChange={(e) => setJenjang(e.target.value as any)}
-                    disabled={isLocked}
                   >
-                    {Object.keys(LEVEL_CONFIG)
-                      .filter(key => key !== 'UMUM')
-                      .map(key => (
-                        <option key={key} value={key}>
-                          {key} ({LEVEL_CONFIG[key].type})
+                    {isLocked ? (
+                      // When locked, show only env jenjang and UMUM
+                      <>
+                        <option value={DEFAULT_JENJANG}>
+                          {LEVEL_CONFIG[DEFAULT_JENJANG]?.name || DEFAULT_JENJANG}
                         </option>
-                      ))}
+                        <option value="UMUM">
+                          {LEVEL_CONFIG['UMUM']?.name || 'Yayasan AL Mannan'}
+                        </option>
+                      </>
+                    ) : (
+                      // When not locked, show all jenjang
+                      Object.keys(LEVEL_CONFIG).map(key => (
+                        <option key={key} value={key}>
+                          {LEVEL_CONFIG[key].name}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>

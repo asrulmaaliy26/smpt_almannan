@@ -2,10 +2,13 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Layers, User, Image as ImageIcon, AlignLeft, FileText, Trash2, Plus, Loader2 } from 'lucide-react';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import { LevelContext } from '../../App';
 import { EducationLevel } from '../../types';
 import { createProject, fetchProjectCategories } from '../../services/api';
 import { useLevelConfig } from '../../hooks/useLevelConfig';
+import { useToast } from '../../components/ToastProvider';
 
 interface DocumentWithMetadata {
   file: File | null;
@@ -17,6 +20,7 @@ const CreateProject: React.FC = () => {
   const navigate = useNavigate();
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
+  const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
   const [title, setTitle] = useState('');
@@ -27,7 +31,7 @@ const CreateProject: React.FC = () => {
   const [documents, setDocuments] = useState<DocumentWithMetadata[]>([]);
   const DEFAULT_JENJANG = import.meta.env.VITE_DEFAULT_JENJANG || 'UMUM';
   const isLocked = DEFAULT_JENJANG !== 'UMUM';
-  const [jenjang, setJenjang] = useState<EducationLevel>(isLocked ? (DEFAULT_JENJANG as EducationLevel) : (activeLevel === 'UMUM' ? 'SMA' : activeLevel));
+  const [jenjang, setJenjang] = useState<EducationLevel>(isLocked ? (DEFAULT_JENJANG as EducationLevel) : (activeLevel === 'UMUM' ? 'MA' : activeLevel));
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -84,15 +88,15 @@ const CreateProject: React.FC = () => {
     e.preventDefault();
 
     if (!title.trim()) {
-      alert('Judul harus diisi');
+      toast.warning('Judul harus diisi');
       return;
     }
     if (!description.trim()) {
-      alert('Deskripsi harus diisi');
+      toast.warning('Deskripsi harus diisi');
       return;
     }
     if (!author.trim()) {
-      alert('Author harus diisi');
+      toast.warning('Author harus diisi');
       return;
     }
 
@@ -107,7 +111,7 @@ const CreateProject: React.FC = () => {
         description,
         author,
         date: today,
-        jenjang: jenjang.toLowerCase(),
+        jenjang: jenjang,
         imageUrl: imageFile || undefined,
         documents: validDocs.length > 0 ? validDocs.map(d => d.file!) : undefined,
         document_types: validDocs.length > 0 ? validDocs.map(d => d.type) : undefined,
@@ -119,10 +123,10 @@ const CreateProject: React.FC = () => {
       sessionStorage.removeItem('admin_projects_cats');
       sessionStorage.removeItem('admin_projects_timestamp');
 
-      alert(response.message || 'Proyek berhasil ditambahkan!');
+      toast.success(response.message || 'Proyek berhasil ditambahkan!');
       navigate('/admin/projects');
     } catch (error: any) {
-      alert(error.message || 'Gagal menyimpan proyek');
+      toast.error(error.message || 'Gagal menyimpan proyek');
       console.error('Error creating project:', error);
     } finally {
       setIsSubmitting(false);
@@ -185,18 +189,28 @@ const CreateProject: React.FC = () => {
                 <Layers className="w-4 h-4" /> Jenjang
               </label>
               <select
-                className={`w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold ${isLocked ? 'opacity-75 cursor-not-allowed' : ''}`}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold"
                 value={jenjang}
                 onChange={(e) => setJenjang(e.target.value as EducationLevel)}
-                disabled={isLocked}
               >
-                {Object.keys(LEVEL_CONFIG)
-                  .filter(key => key !== 'UMUM')
-                  .map(key => (
-                    <option key={key} value={key}>
-                      {key} ({LEVEL_CONFIG[key].type})
+                {isLocked ? (
+                  // When locked, show only env jenjang and UMUM
+                  <>
+                    <option value={DEFAULT_JENJANG}>
+                      {LEVEL_CONFIG[DEFAULT_JENJANG]?.name || DEFAULT_JENJANG}
                     </option>
-                  ))}
+                    <option value="UMUM">
+                      {LEVEL_CONFIG['UMUM']?.name || 'Yayasan AL Mannan'}
+                    </option>
+                  </>
+                ) : (
+                  // When not locked, show all jenjang
+                  Object.keys(LEVEL_CONFIG).map(key => (
+                    <option key={key} value={key}>
+                      {LEVEL_CONFIG[key].name}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
@@ -211,7 +225,30 @@ const CreateProject: React.FC = () => {
               <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4">
                 <AlignLeft className="w-4 h-4" /> Deskripsi Projek
               </label>
-              <textarea rows={8} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Jelaskan detail projek, tujuan, dan hasil yang dicapai..."></textarea>
+              <div className="bg-slate-50 border border-slate-100 rounded-[2.5rem] overflow-hidden">
+                <ReactQuill
+                  theme="snow"
+                  value={description}
+                  onChange={setDescription}
+                  modules={{
+                    toolbar: [
+                      [{ 'header': [1, 2, 3, false] }],
+                      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                      [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+                      ['link', 'image'],
+                      ['clean']
+                    ],
+                  }}
+                  formats={[
+                    'header',
+                    'bold', 'italic', 'underline', 'strike', 'blockquote',
+                    'list', 'bullet', 'indent',
+                    'link', 'image'
+                  ]}
+                  className="h-96 mb-12"
+                  placeholder="Jelaskan detail projek, tujuan, dan hasil yang dicapai..."
+                />
+              </div>
             </div>
 
             <div className="md:col-span-2">

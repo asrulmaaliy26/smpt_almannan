@@ -4,12 +4,14 @@ import { BookOpen, Plus, ArrowLeft, Edit3, Trash2, Star, Tag, ExternalLink, Sear
 import { fetchJournals, fetchJournalCategories, deleteJournal } from '../../services/api';
 import { JournalItem } from '../../types';
 import Pagination from '../../components/Pagination';
+import { useToast } from '../../components/ToastProvider';
 
 const ManageJournals: React.FC = () => {
    const [journals, setJournals] = useState<JournalItem[]>([]);
    const [categories, setCategories] = useState<string[]>(['Semua Kategori']);
    const [activeCategory, setActiveCategory] = useState('Semua Kategori');
    const [searchTerm, setSearchTerm] = useState('');
+   const toast = useToast();
 
    const [loading, setLoading] = useState(true);
    const [currentPage, setCurrentPage] = useState(1);
@@ -81,17 +83,29 @@ const ManageJournals: React.FC = () => {
          // Update cache
          sessionStorage.setItem(CACHE_KEY_JOURNALS, JSON.stringify(newJournals));
 
-         alert('Jurnal berhasil dihapus');
+         toast.success('Jurnal berhasil dihapus');
       } catch (error) {
          console.error('Error deleting journal:', error);
-         alert('Gagal menghapus jurnal');
+         toast.error('Gagal menghapus jurnal');
       }
    };
+
+   const visibleJenjang = import.meta.env.VITE_DEFAULT_JENJANG;
 
    const filteredJournals = journals.filter(item => {
       const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = activeCategory === 'Semua Kategori' || item.category === activeCategory;
-      return matchesSearch && matchesCategory;
+      // Show items if: no env filter, jenjang is UMUM, or jenjang matches env
+      const matchesJenjang = !visibleJenjang ||
+         item.jenjang?.toLowerCase() === 'umum' ||
+         item.jenjang?.toLowerCase() === visibleJenjang.toLowerCase();
+
+      // Debug logging (can be removed later)
+      if (!matchesJenjang && item.jenjang) {
+         console.log(`[Journals] Filtered out: "${item.title}" - jenjang: "${item.jenjang}" (${item.jenjang?.toLowerCase()}) vs env: "${visibleJenjang}" (${visibleJenjang?.toLowerCase()})`);
+      }
+
+      return matchesSearch && matchesCategory && matchesJenjang;
    });
 
    const totalPages = Math.ceil(filteredJournals.length / itemsPerPage);

@@ -4,12 +4,14 @@ import { Lightbulb, Plus, Search, Edit3, Trash2, ArrowLeft, User, Tag, ExternalL
 import { fetchProjects, fetchProjectCategories, deleteProject } from '../../services/api';
 import { ProjectItem } from '../../types';
 import Pagination from '../../components/Pagination';
+import { useToast } from '../../components/ToastProvider';
 
 const ManageProjects: React.FC = () => {
    const [projects, setProjects] = useState<ProjectItem[]>([]);
    const [categories, setCategories] = useState<string[]>(['Semua Kategori']);
    const [activeCategory, setActiveCategory] = useState('Semua Kategori');
    const [searchTerm, setSearchTerm] = useState('');
+   const toast = useToast();
 
    const [loading, setLoading] = useState(true);
    const [currentPage, setCurrentPage] = useState(1);
@@ -81,17 +83,29 @@ const ManageProjects: React.FC = () => {
          // Update cache
          sessionStorage.setItem(CACHE_KEY_PROJECTS, JSON.stringify(newProjects));
 
-         alert('Projek berhasil dihapus');
+         toast.success('Projek berhasil dihapus');
       } catch (error) {
          console.error('Error deleting project:', error);
-         alert('Gagal menghapus projek');
+         toast.error('Gagal menghapus projek');
       }
    };
+
+   const visibleJenjang = import.meta.env.VITE_DEFAULT_JENJANG;
 
    const filteredProjects = projects.filter(item => {
       const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = activeCategory === 'Semua Kategori' || item.category === activeCategory;
-      return matchesSearch && matchesCategory;
+      // Show items if: no env filter, jenjang is UMUM, or jenjang matches env
+      const matchesJenjang = !visibleJenjang ||
+         item.jenjang?.toLowerCase() === 'umum' ||
+         item.jenjang?.toLowerCase() === visibleJenjang.toLowerCase();
+
+      // Debug logging (can be removed later)
+      if (!matchesJenjang && item.jenjang) {
+         console.log(`[Projects] Filtered out: "${item.title}" - jenjang: "${item.jenjang}" (${item.jenjang?.toLowerCase()}) vs env: "${visibleJenjang}" (${visibleJenjang?.toLowerCase()})`);
+      }
+
+      return matchesSearch && matchesCategory && matchesJenjang;
    });
 
    const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);

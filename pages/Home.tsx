@@ -94,7 +94,7 @@ const Home: React.FC = () => {
           try {
             const parsedStats = JSON.parse(envStats);
             if (Array.isArray(parsedStats)) {
-              loadedStats = { 'UMUM': parsedStats, 'MA': parsedStats, 'SMA': parsedStats, 'SMP': parsedStats, 'SD': parsedStats, 'TK': parsedStats, 'KAMPUS': parsedStats, 'STAI': parsedStats };
+              loadedStats = { 'UMUM': parsedStats, 'MA': parsedStats, 'SMP': parsedStats, 'SD': parsedStats, 'TK': parsedStats, 'KAMPUS': parsedStats };
             }
           } catch (e) {
             console.error("Invalid VITE_HOME_STATS", e);
@@ -139,11 +139,11 @@ const Home: React.FC = () => {
       setLoadingNews(true);
       try {
         let newsData: NewsItem[];
-        if (activeLevel === 'UMUM') {
-          newsData = await fetchLatestNews();
-        } else {
-          newsData = await fetchNewsWithLimitAndLevel(3, activeLevel);
-        }
+        // if (activeLevel === 'UMUM') {
+        newsData = await fetchLatestNews();
+        // } else {
+        //   newsData = await fetchNewsWithLimitAndLevel(3, activeLevel);
+        // }
         if (isMounted) {
           setNews(newsData);
         }
@@ -181,7 +181,6 @@ const Home: React.FC = () => {
   const currentStats = React.useMemo(() => {
     // Mapping level aplikasi ke key API stats
     let key = activeLevel as string;
-    if (activeLevel === 'SMA') key = 'MA';
 
     return allStats[key] || [];
   }, [allStats, activeLevel]);

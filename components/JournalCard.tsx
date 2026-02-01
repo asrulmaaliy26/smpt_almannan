@@ -36,7 +36,7 @@ const JournalCard: React.FC<JournalCardProps> = memo(({ journal, levelConfig }) 
                     <div className="bg-slate-50 p-8 rounded-[2rem] mb-10 border border-slate-100/50">
                         <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em] mb-4">Abstrak Penelitian</p>
                         <p className="text-slate-600 leading-relaxed text-sm italic line-clamp-2">
-                            "{journal.abstract}"
+                            "{journal.abstract.replace(/<[^>]+>/g, '')}"
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-8 text-sm">

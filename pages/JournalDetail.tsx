@@ -118,9 +118,10 @@ const JournalDetail: React.FC = () => {
                      <div className="relative">
                         <Quote className="absolute -top-6 -left-6 w-12 h-12 text-blue-50 -z-10" />
                         <h3 className="text-xl font-bold text-slate-900 mb-4">Abstrak</h3>
-                        <p className="leading-relaxed italic text-lg bg-blue-50/30 p-8 rounded-3xl border border-blue-50">
-                           {journal.abstract}
-                        </p>
+                        <div
+                           className="leading-relaxed italic text-lg bg-blue-50/30 p-8 rounded-3xl border border-blue-50 prose max-w-none"
+                           dangerouslySetInnerHTML={{ __html: journal.abstract }}
+                        />
                      </div>
 
                      <div>

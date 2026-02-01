@@ -15,7 +15,12 @@ import { LevelContext } from '../App';
 import { useLevelConfig } from '../hooks/useLevelConfig';
 import { EducationLevel } from '../types';
 
-const AdminSidebar: React.FC = () => {
+interface AdminSidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen = false, onClose }) => {
   const location = useLocation();
   const { activeLevel, setActiveLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
@@ -33,7 +38,12 @@ const AdminSidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-64 bg-slate-900 text-white fixed h-full hidden lg:flex flex-col overflow-y-auto z-40">
+    <aside className={`
+      w-64 bg-slate-900 text-white fixed h-full flex flex-col overflow-y-auto z-50
+      transition-transform duration-300 ease-in-out
+      lg:translate-x-0
+      ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+    `}>
       <div className="p-8 border-b border-white/5 flex-shrink-0">
         <div className="flex items-center gap-3 mb-2">
           <LayoutDashboard className="text-islamic-gold-500" />
@@ -67,8 +77,8 @@ const AdminSidebar: React.FC = () => {
             key={item.path}
             to={item.path}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${isActive(item.path)
-                ? 'bg-white text-slate-900 shadow-lg'
-                : 'text-slate-400 hover:bg-white/5'
+              ? 'bg-white text-slate-900 shadow-lg'
+              : 'text-slate-400 hover:bg-white/5'
               }`}
           >
             <item.icon className="w-4 h-4" /> {item.name}

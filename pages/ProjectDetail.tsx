@@ -115,7 +115,7 @@ const ProjectDetail: React.FC = () => {
                   <div className="space-y-8 text-slate-700">
                      <div>
                         <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2"><Rocket className="w-5 h-5 text-blue-600" /> Deskripsi Projek</h3>
-                        <p className="leading-relaxed text-lg">{project.description}</p>
+                        <div className="leading-relaxed text-lg prose max-w-none" dangerouslySetInnerHTML={{ __html: project.description }} />
                      </div>
                      <div>
                         <h3 className="text-xl font-bold text-slate-900 mb-4">Latar Belakang</h3>

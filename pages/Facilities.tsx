@@ -106,7 +106,7 @@ const Facilities: React.FC = () => {
 
   // Generate filter options dynamically from API config
   const filterOptions = React.useMemo(() => {
-    const levels = Object.keys(LEVEL_CONFIG).filter(key => key !== 'UMUM') as EducationLevel[];
+    const levels = Object.keys(LEVEL_CONFIG) as EducationLevel[];
     return ['SEMUA', ...levels] as (EducationLevel | 'SEMUA')[];
   }, [LEVEL_CONFIG]);
 

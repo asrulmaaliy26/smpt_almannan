@@ -4,6 +4,7 @@ import { Newspaper, Plus, Search, Edit3, Trash2, ArrowLeft, ExternalLink, Rotate
 import { fetchNews, fetchNewsCategories, deleteNews } from '../../services/api';
 import { NewsItem } from '../../types';
 import Pagination from '../../components/Pagination';
+import { useToast } from '../../components/ToastProvider';
 
 const ManageNews: React.FC = () => {
    const [news, setNews] = useState<NewsItem[]>([]);
@@ -13,6 +14,7 @@ const ManageNews: React.FC = () => {
    const itemsPerPage = 6;
    const [activeCategory, setActiveCategory] = useState('Semua');
    const [searchTerm, setSearchTerm] = useState('');
+   const toast = useToast();
 
    const CACHE_KEY_NEWS = 'admin_news_data';
    const CACHE_KEY_CATS = 'admin_news_cats';
@@ -80,17 +82,29 @@ const ManageNews: React.FC = () => {
          // Update cache
          sessionStorage.setItem(CACHE_KEY_NEWS, JSON.stringify(newNews));
 
-         alert('Berita berhasil dihapus');
+         toast.success('Berita berhasil dihapus');
       } catch (error) {
          console.error('Error deleting news:', error);
-         alert('Gagal menghapus berita');
+         toast.error('Gagal menghapus berita');
       }
    };
+
+   const visibleJenjang = import.meta.env.VITE_DEFAULT_JENJANG;
 
    const filteredNews = news.filter(item => {
       const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = activeCategory === 'Semua' || item.category === activeCategory;
-      return matchesSearch && matchesCategory;
+      // Show items if: no env filter, jenjang is UMUM, or jenjang matches env
+      const matchesJenjang = !visibleJenjang ||
+         item.jenjang?.toLowerCase() === 'umum' ||
+         item.jenjang?.toLowerCase() === visibleJenjang.toLowerCase();
+
+      // Debug logging (can be removed later)
+      if (!matchesJenjang && item.jenjang) {
+         console.log(`Filtered out: "${item.title}" - jenjang: "${item.jenjang}" (${item.jenjang?.toLowerCase()}) vs env: "${visibleJenjang}" (${visibleJenjang?.toLowerCase()})`);
+      }
+
+      return matchesSearch && matchesCategory && matchesJenjang;
    });
 
    const totalPages = Math.ceil(filteredNews.length / itemsPerPage);

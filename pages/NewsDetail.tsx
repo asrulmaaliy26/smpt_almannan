@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { fetchNewsDetail, fetchNews } from '../services/api';
+import { fetchNewsDetail, fetchNews, incrementNewsViews } from '../services/api';
 import { useCache } from '../context/CacheContext';
 import { NewsItem } from '../types';
 import { ArrowLeft, Calendar, Eye, ZoomIn, X, User, Share2, Bookmark } from 'lucide-react';
@@ -68,6 +68,31 @@ const NewsDetail: React.FC = () => {
         window.scrollTo(0, 0);
         loadData();
     }, [id, homeCache.allNews, homeCache.news]);
+
+
+    // Separate effect for view incrementing to avoid dupes when cache updates
+    // Using ref to track the last incremented ID to prevent double-fire in StrictMode
+    const lastIncrementedId = React.useRef<string | null>(null);
+
+    useEffect(() => {
+        if (!id) return;
+
+        // If we already incremented for this ID, skip
+        if (lastIncrementedId.current === id) return;
+
+        // Mark this ID as incremented
+        lastIncrementedId.current = id;
+
+        const inc = async () => {
+            try {
+                const viewRes = await incrementNewsViews(id);
+                setNews(prev => prev ? { ...prev, views: viewRes.views } : prev);
+            } catch (e) {
+                console.error("Failed to increment views", e);
+            }
+        };
+        inc();
+    }, [id]);
 
     if (loading) return (
         <div className="flex justify-center items-center min-h-screen bg-slate-50">

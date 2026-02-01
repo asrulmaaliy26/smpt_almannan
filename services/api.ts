@@ -55,9 +55,10 @@ export const getDefaultLevel = (): string => {
 
             // Mapping alternatif
             const altMapping: Record<string, string> = {
-                'MA': 'MA',
+                'TK': 'TK',
                 'MI': 'MI',
                 'SMPT': 'SMPT',
+                'MA': 'MA',
                 'KAMPUS': 'KAMPUS',
             };
 
@@ -273,6 +274,16 @@ export const deleteNewsGalleryImage = async (newsId: string | number, imageUrl: 
     return handleSimpleResponse(response, 'Gagal menghapus gambar galeri');
 };
 
+export const incrementNewsViews = async (id: string | number): Promise<{ message: string, views: number }> => {
+    const response = await fetch(`${API_BASE_URL}/api/news/${id}/views`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+    });
+    return handleSimpleResponse(response, 'Gagal menambahkan views');
+};
 
 /* ================= PROJECTS ================= */
 

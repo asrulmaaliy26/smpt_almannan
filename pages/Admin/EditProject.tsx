@@ -5,6 +5,9 @@ import { ArrowLeft, Save, Layers, User, Image as ImageIcon, AlignLeft, Tag, File
 import { EducationLevel, ProjectDocument } from '../../types';
 import { fetchProjectCategories, fetchProjectDetail, updateProject, deleteProjectDocument } from '../../services/api';
 import { useLevelConfig } from '../../hooks/useLevelConfig';
+import { useToast } from '../../components/ToastProvider';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
 interface NewDocument {
    file: File | null;
@@ -16,6 +19,7 @@ const EditProject: React.FC = () => {
    const { id } = useParams<{ id: string }>();
    const navigate = useNavigate();
    const LEVEL_CONFIG = useLevelConfig();
+   const toast = useToast();
    const projectId = parseInt(id || '0');
 
    const [isLoading, setIsLoading] = useState(true);
@@ -31,7 +35,7 @@ const EditProject: React.FC = () => {
    const DEFAULT_JENJANG = import.meta.env.VITE_DEFAULT_JENJANG || 'UMUM';
    const isLocked = DEFAULT_JENJANG !== 'UMUM';
 
-   const [jenjang, setJenjang] = useState<EducationLevel>('SMA');
+   const [jenjang, setJenjang] = useState<EducationLevel>('MI');
 
    // Images
    const [imageFile, setImageFile] = useState<File | null>(null);
@@ -64,7 +68,7 @@ const EditProject: React.FC = () => {
             }
          } catch (error) {
             console.error('Error loading project data:', error);
-            alert('Gagal memuat data proyek');
+            toast.error('Gagal memuat data proyek');
          } finally {
             setIsLoading(false);
          }
@@ -119,19 +123,19 @@ const EditProject: React.FC = () => {
          await deleteProjectDocument(projectId, doc.url);
          // Remove from state
          setExistingDocuments(prev => prev.filter(d => d.url !== doc.url));
-         alert('Dokumen berhasil dihapus');
+         toast.success('Dokumen berhasil dihapus');
       } catch (error: any) {
          console.error('Error deleting document:', error);
-         alert(error.message || 'Gagal menghapus dokumen');
+         toast.error(error.message || 'Gagal menghapus dokumen');
       }
    };
 
    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
 
-      if (!title.trim()) { alert('Judul harus diisi'); return; }
-      if (!description.trim()) { alert('Deskripsi harus diisi'); return; }
-      if (!author.trim()) { alert('Penulis harus diisi'); return; }
+      if (!title.trim()) { toast.warning('Judul harus diisi'); return; }
+      if (!description.trim()) { toast.warning('Deskripsi harus diisi'); return; }
+      if (!author.trim()) { toast.warning('Penulis harus diisi'); return; }
 
       setIsSubmitting(true);
       try {
@@ -145,7 +149,7 @@ const EditProject: React.FC = () => {
             description,
             author,
             date: today,
-            jenjang: jenjang.toLowerCase(),
+            jenjang: jenjang,
             imageUrl: imageFile || undefined,
             documents: validNewDocs.length > 0 ? validNewDocs.map(d => d.file!) : undefined,
             document_types: validNewDocs.length > 0 ? validNewDocs.map(d => d.type) : undefined,
@@ -157,10 +161,10 @@ const EditProject: React.FC = () => {
          sessionStorage.removeItem('admin_projects_cats');
          sessionStorage.removeItem('admin_projects_timestamp');
 
-         alert(response.message || 'Proyek berhasil diperbarui!');
+         toast.success(response.message || 'Proyek berhasil diperbarui!');
          navigate('/admin/projects');
       } catch (error: any) {
-         alert(error.message || 'Gagal memperbarui proyek');
+         toast.error(error.message || 'Gagal memperbarui proyek');
          console.error('Error updating project:', error);
       } finally {
          setIsSubmitting(false);
@@ -234,18 +238,28 @@ const EditProject: React.FC = () => {
                      <Layers className="w-4 h-4" /> Jenjang
                   </label>
                   <select
-                     className={`w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold ${isLocked ? 'opacity-75 cursor-not-allowed' : ''}`}
+                     className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold"
                      value={jenjang}
                      onChange={(e) => setJenjang(e.target.value as EducationLevel)}
-                     disabled={isLocked}
                   >
-                     {Object.keys(LEVEL_CONFIG)
-                        .filter(key => key !== 'UMUM')
-                        .map(key => (
-                           <option key={key} value={key}>
-                              {key} ({LEVEL_CONFIG[key].type})
+                     {isLocked ? (
+                        // When locked, show only env jenjang and UMUM
+                        <>
+                           <option value={DEFAULT_JENJANG}>
+                              {LEVEL_CONFIG[DEFAULT_JENJANG]?.name || DEFAULT_JENJANG}
                            </option>
-                        ))}
+                           <option value="UMUM">
+                              {LEVEL_CONFIG['UMUM']?.name || 'Yayasan AL Mannan'}
+                           </option>
+                        </>
+                     ) : (
+                        // When not locked, show all jenjang
+                        Object.keys(LEVEL_CONFIG).map(key => (
+                           <option key={key} value={key}>
+                              {LEVEL_CONFIG[key].name}
+                           </option>
+                        ))
+                     )}
                   </select>
                </div>
 
@@ -260,7 +274,29 @@ const EditProject: React.FC = () => {
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4">
                      <AlignLeft className="w-4 h-4" /> Deskripsi Projek
                   </label>
-                  <textarea rows={8} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-[2rem] outline-none" value={description} onChange={(e) => setDescription(e.target.value)}></textarea>
+                  <div className="bg-slate-50 border border-slate-100 rounded-[2.5rem] overflow-hidden">
+                     <ReactQuill
+                        theme="snow"
+                        value={description}
+                        onChange={setDescription}
+                        modules={{
+                           toolbar: [
+                              [{ 'header': [1, 2, 3, false] }],
+                              ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                              [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+                              ['link', 'image'],
+                              ['clean']
+                           ],
+                        }}
+                        formats={[
+                           'header',
+                           'bold', 'italic', 'underline', 'strike', 'blockquote',
+                           'list', 'bullet', 'indent',
+                           'link', 'image'
+                        ]}
+                        className="h-96 mb-12"
+                     />
+                  </div>
                </div>
 
                <div className="md:col-span-2">

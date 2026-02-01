@@ -32,6 +32,7 @@ import { EducationLevel, LevelConfigData } from './types';
 import { fetchLevelConfig, getDefaultLevel } from './services/api';
 
 import { CacheProvider } from './context/CacheContext';
+import { ToastProvider } from './components/ToastProvider';
 
 // Context untuk Level Pendidikan
 export const LevelContext = createContext<{
@@ -98,116 +99,118 @@ const App: React.FC = () => {
   }
 
   return (
-    <CacheProvider>
-      <LevelContext.Provider value={{ activeLevel, setActiveLevel }}>
-        <LevelConfigContext.Provider value={levelConfig}>
-          <div className="flex flex-col min-h-screen">
-            {!isAdminPath && <Navbar />}
-            <main className="flex-grow">
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Home />} />
-                <Route path="/tentang/:section" element={<About />} />
-                <Route path="/berita" element={<News />} />
-                <Route path="/berita/:id" element={<NewsDetail />} />
-                <Route path="/projek" element={<Projects />} />
-                <Route path="/projek/:id" element={<ProjectDetail />} />
-                <Route path="/jurnal" element={<Journals />} />
-                <Route path="/jurnal/:id" element={<JournalDetail />} />
-                <Route path="/fasilitas" element={<Facilities />} />
-                <Route path="/contact" element={<Contact />} />
+    <ToastProvider>
+      <CacheProvider>
+        <LevelContext.Provider value={{ activeLevel, setActiveLevel }}>
+          <LevelConfigContext.Provider value={levelConfig}>
+            <div className="flex flex-col min-h-screen">
+              {!isAdminPath && <Navbar />}
+              <main className="flex-grow">
+                <Routes>
+                  {/* Public Routes */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/tentang/:section" element={<About />} />
+                  <Route path="/berita" element={<News />} />
+                  <Route path="/berita/:id" element={<NewsDetail />} />
+                  <Route path="/projek" element={<Projects />} />
+                  <Route path="/projek/:id" element={<ProjectDetail />} />
+                  <Route path="/jurnal" element={<Journals />} />
+                  <Route path="/jurnal/:id" element={<JournalDetail />} />
+                  <Route path="/fasilitas" element={<Facilities />} />
+                  <Route path="/contact" element={<Contact />} />
 
-                {/* Admin Routes with persistent Sidebar */}
-                <Route path="/admin/login" element={<AdminLogin />} />
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="news" element={<ManageNews />} />
-                  <Route path="news/create" element={<CreateNews />} />
-                  <Route path="news/edit/:id" element={<EditNews />} />
-                  <Route path="projects" element={<ManageProjects />} />
-                  <Route path="projects/create" element={<CreateProject />} />
-                  <Route path="projects/edit/:id" element={<EditProject />} />
-                  <Route path="journals" element={<ManageJournals />} />
-                  <Route path="journals/create" element={<CreateJournal />} />
-                  <Route path="journals/edit/:id" element={<EditJournal />} />
-                </Route>
-              </Routes>
-            </main>
-            {!isAdminPath && <Footer />}
+                  {/* Admin Routes with persistent Sidebar */}
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<AdminDashboard />} />
+                    <Route path="news" element={<ManageNews />} />
+                    <Route path="news/create" element={<CreateNews />} />
+                    <Route path="news/edit/:id" element={<EditNews />} />
+                    <Route path="projects" element={<ManageProjects />} />
+                    <Route path="projects/create" element={<CreateProject />} />
+                    <Route path="projects/edit/:id" element={<EditProject />} />
+                    <Route path="journals" element={<ManageJournals />} />
+                    <Route path="journals/create" element={<CreateJournal />} />
+                    <Route path="journals/edit/:id" element={<EditJournal />} />
+                  </Route>
+                </Routes>
+              </main>
+              {!isAdminPath && <Footer />}
 
-            {!isAdminPath && (
-              <div className="fixed bottom-6 right-6 z-[60]">
-                {!isChatOpen ? (
-                  <button
-                    onClick={() => setIsChatOpen(true)}
-                    className="bg-islamic-green-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-all flex items-center gap-2 group"
-                  >
-                    <Sparkles className="w-6 h-6 animate-pulse" />
-                    <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 font-bold whitespace-nowrap px-0 group-hover:px-2">Asisten AI</span>
-                  </button>
-                ) : (
-                  <div className="bg-white w-80 md:w-96 rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden flex flex-col h-[500px] animate-slideInUp">
-                    <div className="bg-islamic-green-600 p-6 flex justify-between items-center text-white">
-                      <div className="flex items-center gap-3">
-                        <Sparkles className="w-5 h-5" />
-                        <p className="font-bold text-sm">Asisten Virtual</p>
+              {!isAdminPath && (
+                <div className="fixed bottom-6 right-6 z-[60]">
+                  {!isChatOpen ? (
+                    <button
+                      onClick={() => setIsChatOpen(true)}
+                      className="bg-islamic-green-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-all flex items-center gap-2 group"
+                    >
+                      <Sparkles className="w-6 h-6 animate-pulse" />
+                      <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 font-bold whitespace-nowrap px-0 group-hover:px-2">Asisten AI</span>
+                    </button>
+                  ) : (
+                    <div className="bg-white w-80 md:w-96 rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden flex flex-col h-[500px] animate-slideInUp">
+                      <div className="bg-islamic-green-600 p-6 flex justify-between items-center text-white">
+                        <div className="flex items-center gap-3">
+                          <Sparkles className="w-5 h-5" />
+                          <p className="font-bold text-sm">Asisten Virtual</p>
+                        </div>
+                        <button onClick={() => setIsChatOpen(false)} className="hover:rotate-90 transition-transform">
+                          <X className="w-5 h-5" />
+                        </button>
                       </div>
-                      <button onClick={() => setIsChatOpen(false)} className="hover:rotate-90 transition-transform">
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-                    <div className="flex-grow p-4 overflow-y-auto space-y-4 bg-slate-50 hide-scrollbar">
-                      {chatHistory.length === 0 && (
-                        <div className="text-center py-10 px-4">
-                          <div className="bg-islamic-green-100 p-4 rounded-full w-fit mx-auto mb-4">
-                            <MessageCircle className="text-islamic-green-600 w-8 h-8" />
+                      <div className="flex-grow p-4 overflow-y-auto space-y-4 bg-slate-50 hide-scrollbar">
+                        {chatHistory.length === 0 && (
+                          <div className="text-center py-10 px-4">
+                            <div className="bg-islamic-green-100 p-4 rounded-full w-fit mx-auto mb-4">
+                              <MessageCircle className="text-islamic-green-600 w-8 h-8" />
+                            </div>
+                            <p className="text-slate-800 font-bold mb-1">Assalamu'alaikum!</p>
+                            <p className="text-slate-400 text-xs">Ada yang bisa saya bantu terkait Unggul Bangsa?</p>
                           </div>
-                          <p className="text-slate-800 font-bold mb-1">Assalamu'alaikum!</p>
-                          <p className="text-slate-400 text-xs">Ada yang bisa saya bantu terkait Unggul Bangsa?</p>
-                        </div>
-                      )}
-                      {chatHistory.map((chat, idx) => (
-                        <div key={idx} className={`flex ${chat.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${chat.role === 'user' ? 'bg-islamic-green-600 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-800 rounded-bl-none shadow-sm'
-                            }`}>
-                            {chat.text}
+                        )}
+                        {chatHistory.map((chat, idx) => (
+                          <div key={idx} className={`flex ${chat.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${chat.role === 'user' ? 'bg-islamic-green-600 text-white rounded-br-none' : 'bg-white border border-slate-100 text-slate-800 rounded-bl-none shadow-sm'
+                              }`}>
+                              {chat.text}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                      {isTyping && (
-                        <div className="flex justify-start">
-                          <div className="bg-white border border-slate-100 p-3 rounded-2xl flex gap-1 items-center">
-                            <div className="w-1.5 h-1.5 bg-islamic-green-300 rounded-full animate-bounce"></div>
-                            <div className="w-1.5 h-1.5 bg-islamic-green-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-                            <div className="w-1.5 h-1.5 bg-islamic-green-500 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                        ))}
+                        {isTyping && (
+                          <div className="flex justify-start">
+                            <div className="bg-white border border-slate-100 p-3 rounded-2xl flex gap-1 items-center">
+                              <div className="w-1.5 h-1.5 bg-islamic-green-300 rounded-full animate-bounce"></div>
+                              <div className="w-1.5 h-1.5 bg-islamic-green-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                              <div className="w-1.5 h-1.5 bg-islamic-green-500 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
+                      <div className="p-4 border-t border-slate-100 flex gap-2">
+                        <input
+                          type="text"
+                          className="flex-grow bg-slate-100 px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-islamic-green-500"
+                          placeholder="Tanya asisten AI..."
+                          value={chatMessage}
+                          onChange={(e) => setChatMessage(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+                        />
+                        <button
+                          onClick={handleSendChat}
+                          className="bg-islamic-green-600 text-white p-3 rounded-xl hover:bg-islamic-green-700 transition-colors"
+                        >
+                          <Send className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="p-4 border-t border-slate-100 flex gap-2">
-                      <input
-                        type="text"
-                        className="flex-grow bg-slate-100 px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-islamic-green-500"
-                        placeholder="Tanya asisten AI..."
-                        value={chatMessage}
-                        onChange={(e) => setChatMessage(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                      />
-                      <button
-                        onClick={handleSendChat}
-                        className="bg-islamic-green-600 text-white p-3 rounded-xl hover:bg-islamic-green-700 transition-colors"
-                      >
-                        <Send className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </LevelConfigContext.Provider>
-      </LevelContext.Provider>
-    </CacheProvider>
+                  )}
+                </div>
+              )}
+            </div>
+          </LevelConfigContext.Provider>
+        </LevelContext.Provider>
+      </CacheProvider>
+    </ToastProvider>
   );
 };
 
