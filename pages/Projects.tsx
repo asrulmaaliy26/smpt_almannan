@@ -75,7 +75,10 @@ const Projects: React.FC = () => {
 
   const filteredProjects = useMemo(() => {
     return projects.filter(project => {
-      const matchesLevel = effectiveLevelFilter === 'SEMUA' || project.jenjang === effectiveLevelFilter;
+      // Normalize jenjang to uppercase for case-insensitive comparison
+      const normalizedJenjang = project.jenjang?.toUpperCase() || '';
+      // Show projects if: effectiveLevelFilter is SEMUA (show all), project jenjang is UMUM (universal), or project jenjang matches effectiveLevelFilter
+      const matchesLevel = effectiveLevelFilter === 'SEMUA' || normalizedJenjang === 'UMUM' || normalizedJenjang === effectiveLevelFilter;
       const matchesCategory = activeCategory === 'Semua' || project.category === activeCategory;
       return matchesLevel && matchesCategory;
     });

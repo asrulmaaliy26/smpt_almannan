@@ -4,7 +4,8 @@ import { useParams, Link } from 'react-router-dom';
 import { fetchJournalDetail, fetchJournals } from '../services/api';
 import { useCache } from '../context/CacheContext';
 import { JournalItem } from '../types';
-import { ArrowLeft, ArrowRight, Download, FileText, User, GraduationCap, Star, BookOpen, Quote } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Download, FileText, User, GraduationCap, Star, BookOpen, Quote, Layers } from 'lucide-react';
+import { useLevelConfig } from '../hooks/useLevelConfig';
 
 const JournalDetail: React.FC = () => {
    const { id } = useParams<{ id: string }>();
@@ -13,6 +14,7 @@ const JournalDetail: React.FC = () => {
    const [recommendedJournals, setRecommendedJournals] = useState<JournalItem[]>([]);
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState(false);
+   const LEVEL_CONFIG = useLevelConfig();
 
    useEffect(() => {
       const loadData = async () => {
@@ -110,6 +112,15 @@ const JournalDetail: React.FC = () => {
                         <div>
                            <p className="text-[10px] font-bold text-slate-400 uppercase">Skor Review</p>
                            <p className="text-sm font-bold text-slate-800">Sangat Baik</p>
+                        </div>
+                     </div>
+                     <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600"><Layers className="w-5 h-5" /></div>
+                        <div>
+                           <p className="text-[10px] font-bold text-slate-400 uppercase">Jenjang</p>
+                           <span className={`${LEVEL_CONFIG[journal.jenjang]?.bg || 'bg-slate-600'} text-white px-3 py-1 rounded-lg text-xs font-black uppercase`}>
+                              {journal.jenjang}
+                           </span>
                         </div>
                      </div>
                   </div>

@@ -97,8 +97,8 @@ const ManageProjects: React.FC = () => {
       const matchesCategory = activeCategory === 'Semua Kategori' || item.category === activeCategory;
       // Show items if: no env filter, jenjang is UMUM, or jenjang matches env
       const matchesJenjang = !visibleJenjang ||
-         item.jenjang?.toLowerCase() === 'umum' ||
-         item.jenjang?.toLowerCase() === visibleJenjang.toLowerCase();
+         item.jenjang === 'UMUM' ||
+         item.jenjang === visibleJenjang;
 
       // Debug logging (can be removed later)
       if (!matchesJenjang && item.jenjang) {

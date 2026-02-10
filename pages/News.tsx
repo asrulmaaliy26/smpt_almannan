@@ -31,7 +31,9 @@ const News: React.FC = () => {
   const LEVEL_CONFIG = useLevelConfig();
 
   // Initial Data Load (Categories)
+
   useEffect(() => {
+
     if (homeCache.newsCategories && homeCache.newsCategories.length > 0) return;
 
     const loadCategories = async () => {
@@ -82,12 +84,23 @@ const News: React.FC = () => {
     return news.filter(n => {
       const matchesSearch = n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         n.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesLevel = activeLevel === 'UMUM' ? true : n.jenjang === activeLevel;
+      // Normalize jenjang to uppercase for case-insensitive comparison
+      const normalizedJenjang = n.jenjang?.toUpperCase() || '';
+      // Show news if: activeLevel is UMUM (show all), news jenjang is UMUM (universal), or news jenjang matches activeLevel
+      const matchesLevel = activeLevel === 'UMUM' || normalizedJenjang === 'UMUM' || normalizedJenjang === activeLevel;
       const matchesCategory = activeCategory === 'Semua' ? true : n.category === activeCategory;
 
       return matchesSearch && matchesLevel && matchesCategory;
     });
   }, [news, searchTerm, activeLevel, activeCategory]);
+
+  // Debug logging
+  // useEffect(() => {
+  //   console.log("News:", news);
+  //   console.log("Filtered News:", filteredNews);
+  //   console.log("Active Level:", activeLevel);
+  //   console.log("Active Category:", activeCategory);
+  // }, [news, filteredNews, activeLevel, activeCategory]);
 
   const loadMore = () => {
     setLimit(prev => prev + 6);
@@ -95,7 +108,11 @@ const News: React.FC = () => {
 
   const trendingNews = useMemo(() => {
     return [...news]
-      .filter(n => activeLevel === 'UMUM' ? true : n.jenjang === activeLevel)
+      .filter(n => {
+        const normalizedJenjang = n.jenjang?.toUpperCase() || '';
+        // Show news if: activeLevel is UMUM (show all), news jenjang is UMUM (universal), or news jenjang matches activeLevel
+        return activeLevel === 'UMUM' || normalizedJenjang === 'UMUM' || normalizedJenjang === activeLevel;
+      })
       .sort((a, b) => b.views - a.views)
       .slice(0, 4);
   }, [news, activeLevel]);

@@ -4,7 +4,8 @@ import { useParams, Link } from 'react-router-dom';
 import { fetchProjectDetail, fetchProjects } from '../services/api';
 import { useCache } from '../context/CacheContext';
 import { ProjectItem } from '../types';
-import { ArrowLeft, ArrowRight, User, Calendar, Lightbulb, Zap, Rocket, FileText, Download } from 'lucide-react';
+import { ArrowLeft, ArrowRight, User, Calendar, Lightbulb, Zap, Rocket, FileText, Download, Layers } from 'lucide-react';
+import { useLevelConfig } from '../hooks/useLevelConfig';
 
 const ProjectDetail: React.FC = () => {
    const { id } = useParams<{ id: string }>();
@@ -14,6 +15,7 @@ const ProjectDetail: React.FC = () => {
    const [loading, setLoading] = useState(true);
    const [imgLoaded, setImgLoaded] = useState(false);
    const [error, setError] = useState(false);
+   const LEVEL_CONFIG = useLevelConfig();
 
    useEffect(() => {
       const loadData = async () => {
@@ -92,7 +94,20 @@ const ProjectDetail: React.FC = () => {
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Tanggal Rilis</p>
                         <p className="text-sm font-bold text-slate-800 flex items-center gap-2"><Calendar className="w-4 h-4" /> {project.date}</p>
                      </div>
-                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 col-span-2 md:col-span-1">
+                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Kategori</p>
+                        <p className="text-sm font-bold text-slate-800 flex items-center gap-2"><Rocket className="w-4 h-4" /> {project.category}</p>
+                     </div>
+                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Jenjang</p>
+                        <p className="text-sm font-bold flex items-center gap-2">
+                           <Layers className="w-4 h-4" />
+                           <span className={`${LEVEL_CONFIG[project.jenjang]?.bg || 'bg-slate-600'} text-white px-3 py-1 rounded-lg text-xs font-black uppercase`}>
+                              {project.jenjang}
+                           </span>
+                        </p>
+                     </div>
+                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Status Projek</p>
                         <p className="text-sm font-bold text-green-600 flex items-center gap-2"><Zap className="w-4 h-4" /> Terpublikasi</p>
                      </div>

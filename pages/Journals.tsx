@@ -80,7 +80,10 @@ const Journals: React.FC = () => {
 
   const filteredJournals = useMemo(() => {
     return journals.filter(journal => {
-      const matchesLevel = effectiveLevelFilter === 'SEMUA' || journal.jenjang === effectiveLevelFilter;
+      // Normalize jenjang to uppercase for case-insensitive comparison
+      const normalizedJenjang = journal.jenjang?.toUpperCase() || '';
+      // Show journals if: effectiveLevelFilter is SEMUA (show all), journal jenjang is UMUM (universal), or journal jenjang matches effectiveLevelFilter
+      const matchesLevel = effectiveLevelFilter === 'SEMUA' || normalizedJenjang === 'UMUM' || normalizedJenjang === effectiveLevelFilter;
       const matchesCategory = activeCategory === 'Semua' || journal.category === activeCategory;
       return matchesLevel && matchesCategory;
     });

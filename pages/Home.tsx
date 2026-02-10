@@ -429,7 +429,7 @@ const Home: React.FC = () => {
                       </div>
                     </div>
                     <h3 className="text-2xl md:text-3xl font-black text-slate-900 mb-4 md:mb-6 leading-tight group-hover:text-islamic-gold-600 transition-colors">{project.title}</h3>
-                    <p className="text-slate-500 leading-relaxed mb-8 md:mb-10 line-clamp-2 text-base md:text-lg">{project.description}</p>
+                    <p className="text-slate-500 leading-relaxed mb-8 md:mb-10 line-clamp-2 text-base md:text-lg" dangerouslySetInnerHTML={{ __html: project.description }}></p>
 
                     <div className="mt-auto pt-6 md:pt-8 border-t border-slate-100 flex items-center gap-4">
                       <div className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl ${LEVEL_CONFIG[project.jenjang]?.bg || 'bg-slate-200'} flex items-center justify-center text-white font-black text-base md:text-lg shadow-lg`}>
