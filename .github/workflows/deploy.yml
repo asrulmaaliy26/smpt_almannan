@@ -1,0 +1,51 @@
+name: 🚀 Auto Deploy - smpt.lpialhidayah.or.id
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🏗️ Build Project
+        run: npm run build
+
+      - name: 📤 Upload dist/ ke VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          source: "dist/*"
+          target: "/home/staialmannan/smpt.lpialhidayah.or.id/dist"
+          strip_components: 1
+
+      - name: ♻️ Reload Apache di VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script: |
+            chown -R staialmannan:staialmannan /home/staialmannan/smpt.lpialhidayah.or.id/dist
+            rm -f /home/staialmannan/smpt.lpialhidayah.or.id/default.html
+            rm -f /home/staialmannan/smpt.lpialhidayah.or.id/dist/default.html
+            /usr/local/apps/apache2/bin/apachectl graceful
