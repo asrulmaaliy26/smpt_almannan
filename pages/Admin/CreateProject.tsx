@@ -32,6 +32,14 @@ const CreateProject: React.FC = () => {
   const DEFAULT_JENJANG = import.meta.env.VITE_DEFAULT_JENJANG || 'UMUM';
   const isLocked = DEFAULT_JENJANG !== 'UMUM';
   const [jenjang, setJenjang] = useState<EducationLevel>(isLocked ? (DEFAULT_JENJANG as EducationLevel) : (activeLevel === 'UMUM' ? 'MA' : activeLevel));
+  const [lingkupKampus, setLingkupKampus] = useState<'Umum' | 'Spesifik'>('Umum');
+  const [fakultas, setFakultas] = useState<string>('');
+  const [jurusan, setJurusan] = useState<string>('');
+
+  const FAKULTAS_OPTIONS: Record<string, string[]> = {
+    'Ushuluddin': ['Studi Islam', 'Ilmu Al-Quran dan Tafsir'],
+    'Tarbiyah': ['Manajemen Pendidikan Islam']
+  };
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -112,6 +120,8 @@ const CreateProject: React.FC = () => {
         author,
         date: today,
         jenjang: jenjang,
+        fakultas: jenjang === 'KAMPUS' && lingkupKampus === 'Spesifik' ? fakultas : undefined,
+        jurusan: jenjang === 'KAMPUS' && lingkupKampus === 'Spesifik' ? jurusan : undefined,
         imageUrl: imageFile || undefined,
         documents: validDocs.length > 0 ? validDocs.map(d => d.file!) : undefined,
         document_types: validDocs.length > 0 ? validDocs.map(d => d.type) : undefined,
@@ -213,6 +223,69 @@ const CreateProject: React.FC = () => {
                 )}
               </select>
             </div>
+
+            {jenjang === 'KAMPUS' && (
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4">
+                    Lingkup Kampus
+                  </label>
+                  <select
+                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold"
+                    value={lingkupKampus}
+                    onChange={(e) => {
+                      const val = e.target.value as 'Umum' | 'Spesifik';
+                      setLingkupKampus(val);
+                      if (val === 'Umum') {
+                         setFakultas('');
+                         setJurusan('');
+                      } else {
+                         setFakultas('Ushuluddin');
+                         setJurusan(FAKULTAS_OPTIONS['Ushuluddin'][0]);
+                      }
+                    }}
+                  >
+                    <option value="Umum">Umum Kampus</option>
+                    <option value="Spesifik">Spesifik Jurusan</option>
+                  </select>
+                </div>
+                {lingkupKampus === 'Spesifik' && (
+                  <>
+                    <div>
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4">
+                        Fakultas
+                      </label>
+                      <select
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold"
+                        value={fakultas}
+                        onChange={(e) => {
+                          setFakultas(e.target.value);
+                          setJurusan(FAKULTAS_OPTIONS[e.target.value][0] || '');
+                        }}
+                      >
+                        {Object.keys(FAKULTAS_OPTIONS).map(f => (
+                          <option key={f} value={f}>{f}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4">
+                        Jurusan
+                      </label>
+                      <select
+                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold"
+                        value={jurusan}
+                        onChange={(e) => setJurusan(e.target.value)}
+                      >
+                        {fakultas && FAKULTAS_OPTIONS[fakultas]?.map(j => (
+                          <option key={j} value={j}>{j}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
             <div className="md:col-span-2">
               <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4">

@@ -17,16 +17,19 @@ interface HomeCache {
     allNews: NewsItem[];
     newsCategories: string[];
     isNewsLoaded: boolean;
+    hasMoreNews: boolean;
 
     // Projects Page Cache
     allProjects: ProjectItem[];
     projectCategories: string[];
     isProjectsLoaded: boolean;
+    hasMoreProjects: boolean;
 
     // Journals Page Cache
     allJournals: JournalItem[];
     journalCategories: string[];
     isJournalsLoaded: boolean;
+    hasMoreJournals: boolean;
 
     // Facilities Page Cache
     allFacilities: Facility[];
@@ -52,14 +55,17 @@ const defaultCache: HomeCache = {
     allNews: [],
     newsCategories: [],
     isNewsLoaded: false,
+    hasMoreNews: true,
 
     allProjects: [],
     projectCategories: [],
     isProjectsLoaded: false,
+    hasMoreProjects: true,
 
     allJournals: [],
     journalCategories: [],
     isJournalsLoaded: false,
+    hasMoreJournals: true,
 
     allFacilities: [],
     isFacilitiesLoaded: false,

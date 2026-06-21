@@ -115,6 +115,8 @@ export interface ContactUsPayload {
     contact_info: string;
     message: string;
     jenjang: string;
+    fakultas?: string;
+    jurusan?: string;
 }
 
 export const submitContactUs = async (payload: ContactUsPayload): Promise<{ message: string }> => {
@@ -132,6 +134,8 @@ export interface ComplaintPayload {
     category: string;
     message: string;
     jenjang: string;
+    fakultas?: string;
+    jurusan?: string;
 }
 
 export const submitComplaint = async (payload: ComplaintPayload): Promise<{ message: string }> => {
@@ -160,8 +164,13 @@ async function handleSimpleResponse(response: Response, errorPrefix: string) {
 
 /* ================= NEWS ================= */
 
-export const fetchNews = async (): Promise<NewsItem[]> => {
-    const json = await fetchJson<{ data: NewsItem[] }>(`${API_BASE_URL}/news`, 'Gagal mengambil data Berita');
+export const fetchNews = async (fakultas?: string, jurusan?: string): Promise<NewsItem[]> => {
+    let url = `${API_BASE_URL}/news`;
+    const params = new URLSearchParams();
+    if (fakultas) params.append('fakultas', fakultas);
+    if (jurusan) params.append('jurusan', jurusan);
+    if (params.toString()) url += `?${params.toString()}`;
+    const json = await fetchJson<{ data: NewsItem[] }>(url, 'Gagal mengambil data Berita');
     return json.data;
 };
 
@@ -174,8 +183,13 @@ export const fetchNewsWithLimit = async (limit: number): Promise<NewsItem[]> => 
     return json.data;
 };
 
-export const fetchNewsWithLimitAndLevel = async (limit: number, level: string): Promise<NewsItem[]> => {
-    const json = await fetchJson<{ data: NewsItem[] }>(`${API_BASE_URL}/news/limit/${limit}/${level}`, `Gagal mengambil ${limit} berita untuk jenjang ${level}`);
+export const fetchNewsWithLimitAndLevel = async (limit: number, level: string, fakultas?: string, jurusan?: string): Promise<NewsItem[]> => {
+    let url = `${API_BASE_URL}/news/limit/${limit}/${level}`;
+    const params = new URLSearchParams();
+    if (fakultas) params.append('fakultas', fakultas);
+    if (jurusan) params.append('jurusan', jurusan);
+    if (params.toString()) url += `?${params.toString()}`;
+    const json = await fetchJson<{ data: NewsItem[] }>(url, `Gagal mengambil ${limit} berita untuk jenjang ${level}`);
     return json.data;
 };
 
@@ -197,6 +211,8 @@ export interface CreateNewsPayload {
     category: string;
     jenjang: string;
     level?: string;
+    fakultas?: string;
+    jurusan?: string;
     main_image?: File;
     gallery?: File[];
 }
@@ -215,6 +231,8 @@ export const createNews = async (payload: CreateNewsPayload): Promise<CreateNews
     formData.append('category', payload.category);
     formData.append('jenjang', payload.jenjang);
     if (payload.level) formData.append('level', payload.level);
+    if (payload.fakultas) formData.append('fakultas', payload.fakultas);
+    if (payload.jurusan) formData.append('jurusan', payload.jurusan);
     if (payload.main_image) formData.append('main_image', payload.main_image);
     if (payload.gallery?.length) {
         payload.gallery.forEach(file => formData.append('gallery[]', file));
@@ -242,6 +260,8 @@ export const updateNews = async (payload: UpdateNewsPayload): Promise<CreateNews
     formData.append('category', payload.category);
     formData.append('jenjang', payload.jenjang);
     if (payload.level) formData.append('level', payload.level);
+    if (payload.fakultas) formData.append('fakultas', payload.fakultas);
+    if (payload.jurusan) formData.append('jurusan', payload.jurusan);
     if (payload.main_image) formData.append('main_image', payload.main_image);
     if (payload.gallery?.length) {
         payload.gallery.forEach(file => formData.append('gallery[]', file));
@@ -287,8 +307,13 @@ export const incrementNewsViews = async (id: string | number): Promise<{ message
 
 /* ================= PROJECTS ================= */
 
-export const fetchProjects = async (): Promise<ProjectItem[]> => {
-    const json = await fetchJson<{ data: ProjectItem[] }>(`${API_BASE_URL}/projects`, 'Gagal mengambil data Project');
+export const fetchProjects = async (fakultas?: string, jurusan?: string): Promise<ProjectItem[]> => {
+    let url = `${API_BASE_URL}/projects`;
+    const params = new URLSearchParams();
+    if (fakultas) params.append('fakultas', fakultas);
+    if (jurusan) params.append('jurusan', jurusan);
+    if (params.toString()) url += `?${params.toString()}`;
+    const json = await fetchJson<{ data: ProjectItem[] }>(url, 'Gagal mengambil data Project');
     return json.data;
 };
 
@@ -309,6 +334,8 @@ export interface CreateProjectPayload {
     author: string;
     date: string;
     jenjang: string;
+    fakultas?: string;
+    jurusan?: string;
     imageUrl?: File;
     documents?: File[];
     document_types?: string[];
@@ -328,6 +355,8 @@ export const createProject = async (payload: CreateProjectPayload): Promise<Crea
     formData.append('author', payload.author);
     formData.append('date', payload.date);
     formData.append('jenjang', payload.jenjang);
+    if (payload.fakultas) formData.append('fakultas', payload.fakultas);
+    if (payload.jurusan) formData.append('jurusan', payload.jurusan);
     if (payload.imageUrl) formData.append('imageUrl', payload.imageUrl);
 
     if (payload.documents?.length) {
@@ -357,6 +386,8 @@ export const updateProject = async (payload: UpdateProjectPayload): Promise<Crea
     formData.append('author', payload.author);
     formData.append('date', payload.date);
     formData.append('jenjang', payload.jenjang);
+    if (payload.fakultas) formData.append('fakultas', payload.fakultas);
+    if (payload.jurusan) formData.append('jurusan', payload.jurusan);
     if (payload.imageUrl) formData.append('imageUrl', payload.imageUrl);
 
     if (payload.documents?.length) {
@@ -399,8 +430,13 @@ export interface DeleteResponse {
 
 /* ================= JOURNALS ================= */
 
-export const fetchJournals = async (): Promise<JournalItem[]> => {
-    const json = await fetchJson<{ data: JournalItem[] }>(`${API_BASE_URL}/journals`, 'Gagal mengambil data Jurnal');
+export const fetchJournals = async (fakultas?: string, jurusan?: string): Promise<JournalItem[]> => {
+    let url = `${API_BASE_URL}/journals`;
+    const params = new URLSearchParams();
+    if (fakultas) params.append('fakultas', fakultas);
+    if (jurusan) params.append('jurusan', jurusan);
+    if (params.toString()) url += `?${params.toString()}`;
+    const json = await fetchJson<{ data: JournalItem[] }>(url, 'Gagal mengambil data Jurnal');
     return json.data;
 };
 
@@ -428,6 +464,8 @@ export interface CreateJournalPayload {
     score: number;
     date: string;
     jenjang: string;
+    fakultas?: string;
+    jurusan?: string;
     is_best: boolean;
     documentUrl?: File;
 }
@@ -447,6 +485,8 @@ export const createJournal = async (payload: CreateJournalPayload): Promise<Crea
     formData.append('score', payload.score.toString());
     formData.append('date', payload.date);
     formData.append('jenjang', payload.jenjang);
+    if (payload.fakultas) formData.append('fakultas', payload.fakultas);
+    if (payload.jurusan) formData.append('jurusan', payload.jurusan);
     formData.append('is_best', payload.is_best ? '1' : '0');
     if (payload.documentUrl) formData.append('documentUrl', payload.documentUrl);
 
@@ -473,6 +513,8 @@ export const updateJournal = async (payload: UpdateJournalPayload): Promise<Crea
     formData.append('score', payload.score.toString());
     formData.append('date', payload.date);
     formData.append('jenjang', payload.jenjang);
+    if (payload.fakultas) formData.append('fakultas', payload.fakultas);
+    if (payload.jurusan) formData.append('jurusan', payload.jurusan);
     formData.append('is_best', payload.is_best ? '1' : '0');
     if (payload.documentUrl) formData.append('documentUrl', payload.documentUrl);
     formData.append('_method', 'PUT');
@@ -497,8 +539,13 @@ export const deleteJournal = async (id: string | number): Promise<DeleteResponse
 
 /* ================= FACILITIES ================= */
 
-export const fetchFacilities = async (): Promise<Facility[]> => {
-    const json = await fetchJson<{ data: Facility[] }>(`${API_BASE_URL}/facilities`, 'Gagal mengambil data Fasilitas');
+export const fetchFacilities = async (fakultas?: string, jurusan?: string): Promise<Facility[]> => {
+    let url = `${API_BASE_URL}/facilities`;
+    const params = new URLSearchParams();
+    if (fakultas) params.append('fakultas', fakultas);
+    if (jurusan) params.append('jurusan', jurusan);
+    if (params.toString()) url += `?${params.toString()}`;
+    const json = await fetchJson<{ data: Facility[] }>(url, 'Gagal mengambil data Fasilitas');
     return json.data;
 };
 

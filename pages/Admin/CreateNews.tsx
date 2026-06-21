@@ -43,7 +43,15 @@ const CreateNews: React.FC = () => {
   const DEFAULT_JENJANG = import.meta.env.VITE_DEFAULT_JENJANG || 'UMUM';
   const isLocked = DEFAULT_JENJANG !== 'UMUM';
   const [jenjang, setJenjang] = useState<EducationLevel>(isLocked ? (DEFAULT_JENJANG as EducationLevel) : (activeLevel === 'UMUM' ? 'MA' : activeLevel));
+  const [lingkupKampus, setLingkupKampus] = useState<'Umum' | 'Spesifik'>('Umum');
+  const [fakultas, setFakultas] = useState<string>('');
+  const [jurusan, setJurusan] = useState<string>('');
   const [content, setContent] = useState('');
+
+  const FAKULTAS_OPTIONS: Record<string, string[]> = {
+    'Ushuluddin': ['Studi Islam', 'Ilmu Al-Quran dan Tafsir'],
+    'Tarbiyah': ['Manajemen Pendidikan Islam']
+  };
   const [mainImage, setMainImage] = useState<File | null>(null);
   const [gallery, setGallery] = useState<File[]>([]);
 
@@ -147,6 +155,8 @@ const CreateNews: React.FC = () => {
         date: today,
         category,
         jenjang: jenjang,
+        fakultas: jenjang === 'KAMPUS' && lingkupKampus === 'Spesifik' ? fakultas : undefined,
+        jurusan: jenjang === 'KAMPUS' && lingkupKampus === 'Spesifik' ? jurusan : undefined,
         level: category === 'Prestasi' ? level : undefined,
         main_image: mainImage || undefined,
         gallery: validGallery.length > 0 ? validGallery : undefined,
@@ -275,6 +285,69 @@ const CreateNews: React.FC = () => {
                   </select>
                 </div>
               </div>
+
+              {jenjang === 'KAMPUS' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+                      Lingkup Kampus
+                    </label>
+                    <select
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-slate-700 appearance-none outline-none"
+                      value={lingkupKampus}
+                      onChange={(e) => {
+                        const val = e.target.value as 'Umum' | 'Spesifik';
+                        setLingkupKampus(val);
+                        if (val === 'Umum') {
+                           setFakultas('');
+                           setJurusan('');
+                        } else {
+                           setFakultas('Ushuluddin');
+                           setJurusan(FAKULTAS_OPTIONS['Ushuluddin'][0]);
+                        }
+                      }}
+                    >
+                      <option value="Umum">Umum Kampus</option>
+                      <option value="Spesifik">Spesifik Jurusan</option>
+                    </select>
+                  </div>
+                  {lingkupKampus === 'Spesifik' && (
+                    <>
+                      <div>
+                        <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+                          Fakultas
+                        </label>
+                        <select
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-slate-700 appearance-none outline-none"
+                          value={fakultas}
+                          onChange={(e) => {
+                            setFakultas(e.target.value);
+                            setJurusan(FAKULTAS_OPTIONS[e.target.value][0] || '');
+                          }}
+                        >
+                          {Object.keys(FAKULTAS_OPTIONS).map(f => (
+                            <option key={f} value={f}>{f}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+                          Jurusan
+                        </label>
+                        <select
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black text-slate-700 appearance-none outline-none"
+                          value={jurusan}
+                          onChange={(e) => setJurusan(e.target.value)}
+                        >
+                          {fakultas && FAKULTAS_OPTIONS[fakultas]?.map(j => (
+                            <option key={j} value={j}>{j}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
               {category === 'Prestasi' && (
                 <div>

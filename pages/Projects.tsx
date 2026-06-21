@@ -24,7 +24,7 @@ const Projects: React.FC = () => {
   const [projLoading, setProjLoading] = useState(!homeCache.isProjectsLoaded);
 
   const [limit, setLimit] = useState(homeCache.allProjects?.length || 6);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(homeCache.hasMoreProjects ?? true);
   const theme = LEVEL_CONFIG[activeLevel];
 
   useEffect(() => {
@@ -45,7 +45,7 @@ const Projects: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (homeCache.isProjectsLoaded && projects.length >= limit) {
+    if (homeCache.isProjectsLoaded && (projects.length >= limit || !homeCache.hasMoreProjects)) {
       setProjLoading(false);
       return;
     }
@@ -55,12 +55,12 @@ const Projects: React.FC = () => {
       try {
         const projectsData = await fetchProjectsWithLimit(limit);
         setProjects(projectsData);
-        setHomeCache({ allProjects: projectsData, isProjectsLoaded: true });
-
         if (projectsData.length < limit) {
           setHasMore(false);
+          setHomeCache({ allProjects: projectsData, isProjectsLoaded: true, hasMoreProjects: false });
         } else {
           setHasMore(true);
+          setHomeCache({ allProjects: projectsData, isProjectsLoaded: true, hasMoreProjects: true });
         }
       } catch (error) {
         console.error('Error loading project data:', error);
@@ -80,6 +80,7 @@ const Projects: React.FC = () => {
       // Show projects if: effectiveLevelFilter is SEMUA (show all), project jenjang is UMUM (universal), or project jenjang matches effectiveLevelFilter
       const matchesLevel = effectiveLevelFilter === 'SEMUA' || normalizedJenjang === 'UMUM' || normalizedJenjang === effectiveLevelFilter;
       const matchesCategory = activeCategory === 'Semua' || project.category === activeCategory;
+
       return matchesLevel && matchesCategory;
     });
   }, [projects, effectiveLevelFilter, activeCategory]);
@@ -165,6 +166,8 @@ const Projects: React.FC = () => {
               )}
             </div>
           </div>
+
+
         </aside>
 
         {/* Grid Konten */}

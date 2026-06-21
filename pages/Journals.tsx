@@ -24,7 +24,7 @@ const Journals: React.FC = () => {
   const [loading, setLoading] = useState(!homeCache.isJournalsLoaded);
 
   const [limit, setLimit] = useState(homeCache.allJournals?.length || 6);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(homeCache.hasMoreJournals ?? true);
 
   useEffect(() => {
     if (homeCache.journalCategories && homeCache.journalCategories.length > 0) return;
@@ -44,7 +44,7 @@ const Journals: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (homeCache.isJournalsLoaded && journals.length >= limit) {
+    if (homeCache.isJournalsLoaded && (journals.length >= limit || !homeCache.hasMoreJournals)) {
       setLoading(false);
       return;
     }
@@ -54,12 +54,12 @@ const Journals: React.FC = () => {
       try {
         const journalsData = await fetchJournalsWithLimit(limit);
         setJournals(journalsData);
-        setHomeCache({ allJournals: journalsData, isJournalsLoaded: true });
-
         if (journalsData.length < limit) {
           setHasMore(false);
+          setHomeCache({ allJournals: journalsData, isJournalsLoaded: true, hasMoreJournals: false });
         } else {
           setHasMore(true);
+          setHomeCache({ allJournals: journalsData, isJournalsLoaded: true, hasMoreJournals: true });
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -85,6 +85,7 @@ const Journals: React.FC = () => {
       // Show journals if: effectiveLevelFilter is SEMUA (show all), journal jenjang is UMUM (universal), or journal jenjang matches effectiveLevelFilter
       const matchesLevel = effectiveLevelFilter === 'SEMUA' || normalizedJenjang === 'UMUM' || normalizedJenjang === effectiveLevelFilter;
       const matchesCategory = activeCategory === 'Semua' || journal.category === activeCategory;
+
       return matchesLevel && matchesCategory;
     });
   }, [journals, effectiveLevelFilter, activeCategory]);
@@ -162,6 +163,8 @@ const Journals: React.FC = () => {
               )}
             </div>
           </div>
+
+
         </aside>
 
         {/* List Jurnal */}

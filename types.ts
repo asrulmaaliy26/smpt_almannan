@@ -13,6 +13,8 @@ export interface NewsItem {
   education_level: EducationLevel;
   jenjang: EducationLevel;
   level?: string;
+  fakultas?: string;
+  jurusan?: string;
   gallery: string[];
 }
 
@@ -32,6 +34,8 @@ export interface ProjectItem {
   date: string;
   imageUrl: string;
   jenjang: EducationLevel;
+  fakultas?: string;
+  jurusan?: string;
   documents?: ProjectDocument[];
 }
 
@@ -47,6 +51,8 @@ export interface JournalItem {
   isBest?: boolean;
   is_best?: boolean;
   jenjang: EducationLevel;
+  fakultas?: string;
+  jurusan?: string;
   fileUrl?: string;
 }
 
@@ -66,6 +72,8 @@ export interface Facility {
   description: string;
   imageUrl: string;
   jenjang: EducationLevel;
+  fakultas?: string;
+  jurusan?: string;
 }
 export interface Slide {
   image: string;

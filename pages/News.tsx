@@ -1,31 +1,36 @@
-
-
-import React, { useState, useContext, useEffect, useMemo } from 'react';
-import { fetchNewsCategories, fetchNewsWithLimit } from '../services/api';
-import { Search, TrendingUp, Filter, Check, Loader2 } from 'lucide-react';
-import { LevelContext } from '../App';
-import { Link } from 'react-router-dom';
-import { useLevelConfig } from '../hooks/useLevelConfig';
-import { NewsItem } from '../types';
-import NewsCard from '../components/NewsCard';
-import SkeletonNewsCard from '../components/SkeletonNewsCard';
-import { useCache } from '../context/CacheContext';
+import React, { useState, useContext, useEffect, useMemo } from "react";
+import { fetchNewsCategories, fetchNewsWithLimit } from "../services/api";
+import { Search, TrendingUp, Filter, Check, Loader2 } from "lucide-react";
+import { LevelContext } from "../App";
+import { Link } from "react-router-dom";
+import { useLevelConfig } from "../hooks/useLevelConfig";
+import { NewsItem } from "../types";
+import NewsCard from "../components/NewsCard";
+import SkeletonNewsCard from "../components/SkeletonNewsCard";
+import { useCache } from "../context/CacheContext";
 
 const News: React.FC = () => {
   const { homeCache, setHomeCache } = useCache();
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string>('Semua');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string>("Semua");
 
-  // Init data from cache
-  const [categories, setCategories] = useState<string[]>(homeCache.newsCategories && homeCache.newsCategories.length > 0 ? homeCache.newsCategories : ['Semua']);
+  const [categories, setCategories] = useState<string[]>(
+    homeCache.newsCategories && homeCache.newsCategories.length > 0
+      ? homeCache.newsCategories
+      : ["Semua"],
+  );
   const [news, setNews] = useState<NewsItem[]>(homeCache.allNews || []);
 
-  const [catLoading, setCatLoading] = useState(homeCache.newsCategories && homeCache.newsCategories.length > 0 ? false : true);
+  const [catLoading, setCatLoading] = useState(
+    homeCache.newsCategories && homeCache.newsCategories.length > 0
+      ? false
+      : true,
+  );
   const [newsLoading, setNewsLoading] = useState(!homeCache.isNewsLoaded);
 
   const [limit, setLimit] = useState(homeCache.allNews?.length || 6);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(homeCache.hasMoreNews ?? true);
 
   const { activeLevel } = useContext(LevelContext);
   const LEVEL_CONFIG = useLevelConfig();
@@ -33,7 +38,6 @@ const News: React.FC = () => {
   // Initial Data Load (Categories)
 
   useEffect(() => {
-
     if (homeCache.newsCategories && homeCache.newsCategories.length > 0) return;
 
     const loadCategories = async () => {
@@ -42,7 +46,7 @@ const News: React.FC = () => {
         setCategories(catsData);
         setHomeCache({ newsCategories: catsData });
       } catch (error) {
-        console.error('Error loading categories:', error);
+        console.error("Error loading categories:", error);
       } finally {
         setCatLoading(false);
       }
@@ -53,7 +57,7 @@ const News: React.FC = () => {
   // News Data Load (with limit)
   useEffect(() => {
     // If loaded from cache and we have enough data for current limit, skip fetch
-    if (homeCache.isNewsLoaded && news.length >= limit) {
+    if (homeCache.isNewsLoaded && (news.length >= limit || !homeCache.hasMoreNews)) {
       setNewsLoading(false);
       return;
     }
@@ -63,16 +67,16 @@ const News: React.FC = () => {
       try {
         const newsData = await fetchNewsWithLimit(limit);
         setNews(newsData);
-        setHomeCache({ allNews: newsData, isNewsLoaded: true });
-
         // If we received fewer items than requested limit, we've reached the end
         if (newsData.length < limit) {
           setHasMore(false);
+          setHomeCache({ allNews: newsData, isNewsLoaded: true, hasMoreNews: false });
         } else {
           setHasMore(true);
+          setHomeCache({ allNews: newsData, isNewsLoaded: true, hasMoreNews: true });
         }
       } catch (error) {
-        console.error('Error loading news:', error);
+        console.error("Error loading news:", error);
       } finally {
         setNewsLoading(false);
       }
@@ -81,14 +85,16 @@ const News: React.FC = () => {
   }, [limit]);
 
   const filteredNews = useMemo(() => {
-    return news.filter(n => {
-      const matchesSearch = n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    return news.filter((n) => {
+      const matchesSearch =
+        n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         n.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
       // Normalize jenjang to uppercase for case-insensitive comparison
-      const normalizedJenjang = n.jenjang?.toUpperCase() || '';
-      // Show news if: activeLevel is UMUM (show all), news jenjang is UMUM (universal), or news jenjang matches activeLevel
-      const matchesLevel = activeLevel === 'UMUM' || normalizedJenjang === 'UMUM' || normalizedJenjang === activeLevel;
-      const matchesCategory = activeCategory === 'Semua' ? true : n.category === activeCategory;
+      const normalizedJenjang = n.jenjang?.toUpperCase() || "";
+      // Show news ONLY for activeLevel or UMUM
+      const matchesLevel = normalizedJenjang === activeLevel || normalizedJenjang === "UMUM";
+      const matchesCategory =
+        activeCategory === "Semua" ? true : n.category === activeCategory;
 
       return matchesSearch && matchesLevel && matchesCategory;
     });
@@ -103,15 +109,15 @@ const News: React.FC = () => {
   // }, [news, filteredNews, activeLevel, activeCategory]);
 
   const loadMore = () => {
-    setLimit(prev => prev + 6);
+    setLimit((prev) => prev + 6);
   };
 
   const trendingNews = useMemo(() => {
     return [...news]
-      .filter(n => {
-        const normalizedJenjang = n.jenjang?.toUpperCase() || '';
-        // Show news if: activeLevel is UMUM (show all), news jenjang is UMUM (universal), or news jenjang matches activeLevel
-        return activeLevel === 'UMUM' || normalizedJenjang === 'UMUM' || normalizedJenjang === activeLevel;
+      .filter((n) => {
+        const normalizedJenjang = n.jenjang?.toUpperCase() || "";
+        // Show news ONLY if it matches activeLevel or UMUM
+        return normalizedJenjang === activeLevel || normalizedJenjang === "UMUM";
       })
       .sort((a, b) => b.views - a.views)
       .slice(0, 4);
@@ -120,7 +126,7 @@ const News: React.FC = () => {
   const theme = LEVEL_CONFIG[activeLevel];
 
   const renderedNews = useMemo(() => {
-    return filteredNews.map(news => (
+    return filteredNews.map((news) => (
       <NewsCard
         key={news.id}
         news={news}
@@ -138,12 +144,22 @@ const News: React.FC = () => {
           {/* ... content ... */}
           <header>
             <div className="flex items-center gap-3 mb-4">
-              <div className={`w-12 h-1 bg-islamic-gold-500 rounded-full`}></div>
-              <span className={`text-xs font-black uppercase tracking-[0.3em] ${theme.text}`}>Update Terkini</span>
+              <div
+                className={`w-12 h-1 bg-islamic-gold-500 rounded-full`}
+              ></div>
+              <span
+                className={`text-xs font-black uppercase tracking-[0.3em] ${theme.text}`}
+              >
+                Update Terkini
+              </span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 leading-tight">Warta & Berita</h1>
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 leading-tight">
+              Warta & Berita
+            </h1>
             <p className="text-slate-500 mb-10 max-w-xl leading-relaxed">
-              Ikuti perkembangan terbaru, prestasi santri, dan pengumuman resmi di lingkungan {activeLevel === 'UMUM' ? 'Yayasan Unggul Bangsa' : theme.name}.
+              Ikuti perkembangan terbaru, prestasi santri, dan pengumuman resmi
+              di lingkungan{" "}
+              {activeLevel === "UMUM" ? "Yayasan Unggul Bangsa" : theme.name}.
             </p>
 
             <div className="space-y-6">
@@ -163,7 +179,9 @@ const News: React.FC = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-2 mr-2 text-slate-400">
                   <Filter className="w-4 h-4" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Filter:</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">
+                    Filter:
+                  </span>
                 </div>
                 {catLoading ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-900 mx-4"></div>
@@ -172,28 +190,33 @@ const News: React.FC = () => {
                     <button
                       key={cat}
                       onClick={() => setActiveCategory(cat)}
-                      className={`px-6 py-2.5 rounded-full text-xs font-black transition-all duration-300 border ${activeCategory === cat
-                        ? `${theme.bg} text-white border-transparent shadow-lg shadow-black/5`
-                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
-                        }`}
+                      className={`px-6 py-2.5 rounded-full text-xs font-black transition-all duration-300 border ${
+                        activeCategory === cat
+                          ? `${theme.bg} text-white border-transparent shadow-lg shadow-black/5`
+                          : "bg-white text-slate-500 border-slate-200 hover:border-slate-400"
+                      }`}
                     >
                       {cat}
                     </button>
                   ))
                 )}
               </div>
+
+
             </div>
           </header>
           <div className="space-y-10">
             {newsLoading && limit === 6 ? (
               <div className="space-y-10">
-                {Array(3).fill(0).map((_, i) => <SkeletonNewsCard key={i} />)}
+                {Array(3)
+                  .fill(0)
+                  .map((_, i) => (
+                    <SkeletonNewsCard key={i} />
+                  ))}
               </div>
             ) : filteredNews.length > 0 ? (
               <>
-                <div className="space-y-10">
-                  {renderedNews}
-                </div>
+                <div className="space-y-10">{renderedNews}</div>
 
                 {/* Load More Button */}
                 {hasMore && (
@@ -204,7 +227,9 @@ const News: React.FC = () => {
                       className={`px-8 py-3 rounded-full font-bold text-white transition-all shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 ${theme.bg}`}
                     >
                       {newsLoading ? (
-                        <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Memuat...</span>
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" /> Memuat...
+                        </span>
                       ) : (
                         "Muat Lebih Banyak"
                       )}
@@ -217,9 +242,14 @@ const News: React.FC = () => {
                 <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
                   <Search className="w-8 h-8 text-slate-200" />
                 </div>
-                <p className="text-slate-400 font-black uppercase tracking-widest">Tidak ada warta ditemukan</p>
+                <p className="text-slate-400 font-black uppercase tracking-widest">
+                  Tidak ada warta ditemukan
+                </p>
                 <button
-                  onClick={() => { setSearchTerm(''); setActiveCategory('Semua'); }}
+                  onClick={() => {
+                    setSearchTerm("");
+                    setActiveCategory("Semua");
+                  }}
                   className="mt-6 text-islamic-green-600 font-bold text-sm underline"
                 >
                   Reset Pencarian
@@ -235,17 +265,32 @@ const News: React.FC = () => {
           <div className="sticky top-28 space-y-10">
             <div className="bg-white p-6 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] shadow-sm border border-slate-100">
               <h3 className="text-xl font-black text-slate-900 mb-6 md:mb-10 flex items-center">
-                <TrendingUp className="text-islamic-gold-500 mr-4 w-7 h-7" /> Populer
+                <TrendingUp className="text-islamic-gold-500 mr-4 w-7 h-7" />{" "}
+                Populer
               </h3>
               <div className="space-y-6 md:space-y-10">
                 {trendingNews.map((news, index) => (
-                  <Link to={`/berita/${news.id}`} key={news.id} className="flex gap-5 group">
-                    <span className="text-5xl font-black text-slate-50 group-hover:text-islamic-green-100 transition-colors leading-none">{(index + 1).toString().padStart(2, '0')}</span>
+                  <Link
+                    to={`/berita/${news.id}`}
+                    key={news.id}
+                    className="flex gap-5 group"
+                  >
+                    <span className="text-5xl font-black text-slate-50 group-hover:text-islamic-green-100 transition-colors leading-none">
+                      {(index + 1).toString().padStart(2, "0")}
+                    </span>
                     <div>
-                      <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-islamic-green-600 transition-colors line-clamp-2">{news.title}</h4>
+                      <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-islamic-green-600 transition-colors line-clamp-2">
+                        {news.title}
+                      </h4>
                       <div className="flex items-center gap-3 mt-3">
-                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-md ${theme.bg} text-white uppercase tracking-widest`}>{news.jenjang}</span>
-                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{news.views} views</span>
+                        <span
+                          className={`text-[9px] font-black px-2 py-0.5 rounded-md ${theme.bg} text-white uppercase tracking-widest`}
+                        >
+                          {news.jenjang}
+                        </span>
+                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
+                          {news.views} views
+                        </span>
                       </div>
                     </div>
                   </Link>
@@ -259,10 +304,19 @@ const News: React.FC = () => {
                   <Check className="w-8 h-8 text-islamic-gold-500" />
                 </div>
                 <h4 className="text-2xl font-black mb-4">Newsletter</h4>
-                <p className="text-islamic-green-200 text-sm mb-10 leading-relaxed font-medium">Berlangganan untuk mendapatkan ringkasan kegiatan mingguan sekolah.</p>
+                <p className="text-islamic-green-200 text-sm mb-10 leading-relaxed font-medium">
+                  Berlangganan untuk mendapatkan ringkasan kegiatan mingguan
+                  sekolah.
+                </p>
                 <div className="space-y-4">
-                  <input type="email" placeholder="Email Anda..." className="w-full px-6 py-5 rounded-2xl bg-white/5 border border-white/10 placeholder-islamic-green-600 outline-none focus:bg-white/10 focus:border-white/20 text-sm transition-all" />
-                  <button className="w-full bg-islamic-gold-500 text-white font-black py-5 rounded-2xl hover:bg-islamic-gold-600 transition-all shadow-xl shadow-black/30">Daftar Sekarang</button>
+                  <input
+                    type="email"
+                    placeholder="Email Anda..."
+                    className="w-full px-6 py-5 rounded-2xl bg-white/5 border border-white/10 placeholder-islamic-green-600 outline-none focus:bg-white/10 focus:border-white/20 text-sm transition-all"
+                  />
+                  <button className="w-full bg-islamic-gold-500 text-white font-black py-5 rounded-2xl hover:bg-islamic-gold-600 transition-all shadow-xl shadow-black/30">
+                    Daftar Sekarang
+                  </button>
                 </div>
               </div>
               <div className="absolute top-0 right-0 w-full h-full opacity-5 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/islamic-art.png')]"></div>

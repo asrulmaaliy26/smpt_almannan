@@ -34,8 +34,7 @@ const Carousel: React.FC<CarouselProps> = ({ slides }) => {
       {slides.map((slide, index) => (
         <div
           key={index}
-          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === current ? 'opacity-100' : 'opacity-0'
-            }`}
+          className="absolute inset-0 transition-opacity duration-1000 ease-in-out" style={{ opacity: index === current ? 1 : 0, transition: "opacity 1s ease-in-out", zIndex: index === current ? 10 : 0 }}
         >
           <img
             src={slide.image}
@@ -61,19 +60,19 @@ const Carousel: React.FC<CarouselProps> = ({ slides }) => {
       {/* Controls */}
       <button
         onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-20"
       >
         <ChevronLeft className="w-8 h-8" />
       </button>
       <button
         onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-20"
       >
         <ChevronRight className="w-8 h-8" />
       </button>
 
       {/* Dots */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex space-x-3">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex space-x-3 z-20">
         {slides.map((_, i) => (
           <button
             key={i}

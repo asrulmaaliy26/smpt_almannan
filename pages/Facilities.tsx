@@ -49,7 +49,7 @@ const Facilities: React.FC = () => {
   const theme = LEVEL_CONFIG[activeLevel];
 
   useEffect(() => {
-    if (homeCache.isFacilitiesLoaded && facilities.length > 0) {
+    if (homeCache.isFacilitiesLoaded) {
       setLoading(false);
       return;
     }
@@ -80,6 +80,7 @@ const Facilities: React.FC = () => {
     return facilities.filter(f => {
       const matchesJenjang = effectiveJenjangFilter === 'SEMUA' || f.jenjang === effectiveJenjangFilter;
       const matchesType = typeFilter === 'ALL' || (f.type && f.type.toLowerCase() === typeFilter);
+
       return matchesJenjang && matchesType;
     });
   }, [facilities, effectiveJenjangFilter, typeFilter]);
@@ -166,8 +167,10 @@ const Facilities: React.FC = () => {
                   {typeFilter === opt.id && <ChevronRight className="w-3 h-3" />}
                 </button>
               ))}
+              </div>
             </div>
-          </div>
+
+
         </aside>
 
         {/* Galeri Fasilitas */}
