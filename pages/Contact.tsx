@@ -70,7 +70,12 @@ const Contact: React.FC = () => {
                      <div className="bg-blue-50 p-4 rounded-2xl text-blue-600"><Phone /></div>
                      <div>
                         <p className="font-bold text-slate-800">Telepon & WhatsApp</p>
-                        <p className="text-slate-500">085749555505</p>
+                        <p className="text-slate-500">
+                           IT: <a href="https://wa.me/6285730488236" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">085730488236</a>
+                        </p>
+                        <p className="text-slate-500">
+                           Laundry: <a href="https://wa.me/6282234639615" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">+62 822-3463-9615</a>
+                        </p>
                         <p className="text-xs text-blue-600 mt-1">Hanya pada jam kerja (07:00 - 17:00)</p>
                      </div>
                   </div>

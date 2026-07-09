@@ -182,8 +182,8 @@ const Footer: React.FC = () => {
                 <div className="p-2 bg-white/5 rounded-xl mr-4 group-hover:bg-islamic-gold-500 group-hover:text-white transition-all">
                   <Phone className="w-5 h-5 text-islamic-gold-500 group-hover:text-inherit" />
                 </div>
-                <a href="https://wa.me/6285749555505">
-                  <span className="font-bold text-white">085749555505</span>
+                <a href="https://wa.me/6285659077565">
+                  <span className="font-bold text-white">+62 856-5907-7565 (Bu Latifah)</span>
                 </a>
               </li>
               <li className="flex items-center group">
