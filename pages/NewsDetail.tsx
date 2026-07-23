@@ -7,6 +7,7 @@ import { NewsItem } from '../types';
 import { ArrowLeft, Calendar, Eye, ZoomIn, X, User, Share2, Bookmark } from 'lucide-react';
 import { LevelContext } from '../App';
 import { useLevelConfig } from '../hooks/useLevelConfig';
+import 'react-quill-new/dist/quill.snow.css';
 
 const NewsDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -202,14 +203,27 @@ const NewsDetail: React.FC = () => {
                             <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full blur-[80px] -z-10 pointer-events-none"></div>
 
                             {/* Content with HTML processing */}
-                            <div
-                                className="prose prose-lg prose-slate max-w-none
-                                prose-headings:font-black prose-headings:text-slate-900 
-                                prose-p:text-slate-600 prose-p:leading-relaxed prose-a:text-islamic-green-600 prose-a:no-underline prose-a:border-b-2 prose-a:border-islamic-green-200 hover:prose-a:border-islamic-green-500 prose-a:transition-colors
-                                prose-img:rounded-3xl prose-img:shadow-lg prose-img:w-full prose-img:my-10 prose-img:border prose-img:border-slate-100
-                                marker:text-slate-300"
-                                dangerouslySetInnerHTML={{ __html: news.content }}
-                            />
+                            <div className="ql-snow">
+                                <div
+                                    className="ql-editor font-sans text-lg text-slate-700 leading-relaxed !p-0 !overflow-visible
+                                    [&_p]:!mb-4
+                                    [&_h1]:font-black [&_h1]:text-slate-900 [&_h1]:!mb-3 [&_h1]:!mt-6
+                                    [&_h2]:font-black [&_h2]:text-slate-900 [&_h2]:!mb-3 [&_h2]:!mt-6
+                                    [&_h3]:font-black [&_h3]:text-slate-900 [&_h3]:!mb-3 [&_h3]:!mt-6
+                                    [&_ul]:!mb-4 [&_ol]:!mb-4 [&_li]:!mb-1
+                                    [&_a]:text-islamic-green-600 [&_a]:underline hover:[&_a]:text-islamic-green-700 [&_a]:transition-colors
+                                    [&_strong]:font-bold [&_strong]:text-slate-900
+                                    [&_img]:rounded-3xl [&_img]:shadow-lg [&_img]:w-full [&_img]:!my-8 [&_img]:border [&_img]:border-slate-100"
+                                    dangerouslySetInnerHTML={{ 
+                                        __html: (news.content || '')
+                                            .replace(/&nbsp;/g, ' ')
+                                            .replace(/\u00A0/g, ' ')
+                                            .replace(/\n/g, '</p><p>')
+                                            .replace(/<p><\/p>/g, '<p><br></p>')
+                                            .replace(/<p>\s*<\/p>/g, '<p><br></p>')
+                                    }}
+                                />
+                            </div>
 
                             <div className="border-t border-slate-100 my-10 pt-8 flex items-center justify-between">
                                 <div className="flex items-center gap-3">

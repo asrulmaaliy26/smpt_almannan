@@ -132,13 +132,17 @@ const CreateNews: React.FC = () => {
       toast.warning('Judul harus diisi');
       return;
     }
-    if (!excerpt.trim()) {
-      toast.warning('Ringkasan harus diisi');
-      return;
-    }
     if (!content.trim()) {
       toast.warning('Konten harus diisi');
       return;
+    }
+
+    // Auto-generate excerpt if empty
+    let finalExcerpt = excerpt.trim();
+    if (!finalExcerpt) {
+      const strippedContent = content.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#[0-9]+;/g, ' ').replace(/\s+/g, ' ').trim();
+      finalExcerpt = strippedContent.substring(0, 150) + (strippedContent.length > 150 ? '...' : '');
+      setExcerpt(finalExcerpt);
     }
 
     setIsSubmitting(true);
@@ -148,9 +152,21 @@ const CreateNews: React.FC = () => {
       // Filter out null/empty gallery items
       const validGallery = gallery.filter(file => file !== null && file !== undefined);
 
+      // If no main image selected, use default logosmp.png
+      let finalMainImage: File | undefined = mainImage || undefined;
+      if (!finalMainImage) {
+        try {
+          const res = await fetch('/logosmp.png');
+          const blob = await res.blob();
+          finalMainImage = new File([blob], 'logosmp.png', { type: blob.type || 'image/png' });
+        } catch {
+          finalMainImage = undefined;
+        }
+      }
+
       const response = await createNews({
         title,
-        excerpt,
+        excerpt: finalExcerpt,
         content,
         date: today,
         category,
@@ -158,7 +174,7 @@ const CreateNews: React.FC = () => {
         fakultas: jenjang === 'KAMPUS' && lingkupKampus === 'Spesifik' ? fakultas : undefined,
         jurusan: jenjang === 'KAMPUS' && lingkupKampus === 'Spesifik' ? jurusan : undefined,
         level: category === 'Prestasi' ? level : undefined,
-        main_image: mainImage || undefined,
+        main_image: finalMainImage,
         gallery: validGallery.length > 0 ? validGallery : undefined,
       });
 
@@ -212,7 +228,7 @@ const CreateNews: React.FC = () => {
             <div className="space-y-8">
               <div>
                 <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
-                  <Tag className="w-4 h-4 text-slate-400" /> Judul Artikel
+                  <Tag className="w-4 h-4 text-slate-400" /> Judul Artikel <span className="text-red-500 text-sm">*</span>
                 </label>
                 <input
                   type="text"
@@ -432,7 +448,7 @@ const CreateNews: React.FC = () => {
 
               <div>
                 <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
-                  <AlignLeft className="w-4 h-4" /> Konten Berita
+                  <AlignLeft className="w-4 h-4" /> Konten Berita <span className="text-red-500 text-sm">*</span>
                 </label>
                 <div className="bg-slate-50 border border-slate-100 rounded-[2.5rem] overflow-hidden">
                   <ReactQuill
