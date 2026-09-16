@@ -16,6 +16,8 @@ export interface NewsItem {
   fakultas?: string;
   jurusan?: string;
   gallery: string[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ProjectDocument {

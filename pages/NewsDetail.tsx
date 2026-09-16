@@ -4,10 +4,81 @@ import { useParams, Link } from 'react-router-dom';
 import { fetchNewsDetail, fetchNews, incrementNewsViews } from '../services/api';
 import { useCache } from '../context/CacheContext';
 import { NewsItem } from '../types';
-import { ArrowLeft, Calendar, Eye, ZoomIn, X, User, Share2, Bookmark } from 'lucide-react';
+import { ArrowLeft, Calendar, Eye, ZoomIn, X, User, Share2, Bookmark, Clock } from 'lucide-react';
 import { LevelContext } from '../App';
 import { useLevelConfig } from '../hooks/useLevelConfig';
 import 'react-quill-new/dist/quill.snow.css';
+
+// Helper to format date and time in Indonesian locale with hours, minutes, seconds
+const formatNewsDateTime = (dateStr?: string, createdAtStr?: string) => {
+    if (!dateStr && !createdAtStr) {
+        return {
+            dateText: '-',
+            timeText: '00:00:00 WIB',
+            fullText: '-'
+        };
+    }
+
+    let dateObj: Date = new Date();
+    const d = dateStr ? new Date(dateStr) : null;
+    const c = createdAtStr ? new Date(createdAtStr) : null;
+
+    // Check if created_at has valid non-zero time
+    if (c && !isNaN(c.getTime()) && (c.getHours() !== 0 || c.getMinutes() !== 0 || c.getSeconds() !== 0)) {
+        if (d && !isNaN(d.getTime())) {
+            dateObj = new Date(d.getFullYear(), d.getMonth(), d.getDate(), c.getHours(), c.getMinutes(), c.getSeconds());
+        } else {
+            dateObj = c;
+        }
+    } else if (d && !isNaN(d.getTime())) {
+        dateObj = d;
+    } else if (c && !isNaN(c.getTime())) {
+        dateObj = c;
+    }
+
+    try {
+        const dateText = dateObj.toLocaleDateString('id-ID', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+
+        const timeText = dateObj.toLocaleTimeString('id-ID', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        }).replace(/\./g, ':') + ' WIB';
+
+        return {
+            dateText,
+            timeText,
+            fullText: `${dateText} • ${timeText}`
+        };
+    } catch {
+        return {
+            dateText: dateStr || '-',
+            timeText: '00:00:00 WIB',
+            fullText: dateStr || '-'
+        };
+    }
+};
+
+const formatShortDate = (dateStr?: string) => {
+    if (!dateStr) return '-';
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        return d.toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+        });
+    } catch {
+        return dateStr;
+    }
+};
 
 const NewsDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -115,6 +186,7 @@ const NewsDetail: React.FC = () => {
     );
 
     const newsTheme = LEVEL_CONFIG[news.jenjang] || LEVEL_CONFIG['UMUM'];
+    const dateTimeInfo = formatNewsDateTime(news.date, news.created_at);
 
     return (
         <div className="min-h-screen bg-slate-50 selection:bg-islamic-green-200 selection:text-islamic-green-900 overflow-x-hidden">
@@ -124,16 +196,30 @@ const NewsDetail: React.FC = () => {
 
             <div className="max-w-7xl mx-auto px-4 py-12 relative z-10">
                 {/* Navigation Bar */}
-                <div className="flex justify-between items-center mb-10">
+                <div className="flex justify-between items-center mb-8">
                     <Link to="/berita" className="group inline-flex items-center text-slate-500 hover:text-slate-900 font-bold gap-3 transition-all px-5 py-3 rounded-2xl hover:bg-white hover:shadow-lg hover:shadow-slate-200/50">
                         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                         <span>Kembali ke Warta</span>
                     </Link>
                     <div className="flex gap-2">
-                        <button className="p-3 bg-white rounded-xl text-slate-400 hover:text-islamic-green-600 hover:shadow-lg transition-all border border-slate-100 hover:border-islamic-green-100">
+                        <button 
+                            onClick={() => {
+                                if (navigator.share) {
+                                    navigator.share({ title: news.title, url: window.location.href }).catch(() => {});
+                                } else {
+                                    navigator.clipboard.writeText(window.location.href);
+                                    alert('Tautan berita berhasil disalin ke clipboard!');
+                                }
+                            }}
+                            title="Bagikan Berita"
+                            className="p-3 bg-white rounded-xl text-slate-400 hover:text-islamic-green-600 hover:shadow-lg transition-all border border-slate-100 hover:border-islamic-green-100"
+                        >
                             <Share2 className="w-5 h-5" />
                         </button>
-                        <button className="p-3 bg-white rounded-xl text-slate-400 hover:text-islamic-gold-500 hover:shadow-lg transition-all border border-slate-100 hover:border-islamic-gold-100">
+                        <button 
+                            title="Simpan"
+                            className="p-3 bg-white rounded-xl text-slate-400 hover:text-islamic-gold-500 hover:shadow-lg transition-all border border-slate-100 hover:border-islamic-gold-100"
+                        >
                             <Bookmark className="w-5 h-5" />
                         </button>
                     </div>
@@ -142,12 +228,48 @@ const NewsDetail: React.FC = () => {
                 <div className="flex flex-col lg:flex-row gap-8 xl:gap-16">
                     {/* Main Content Area */}
                     <div className="lg:w-2/3">
-                        {/* Hero Article Header */}
-                        <div className="relative mb-12 group perspective-1000">
-                            {/* Main Image Container with 3D-ish Effect */}
-                            <div className="rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200 relative z-10 aspect-video transform transition-all duration-700 hover:scale-[1.01]"
-                                onClick={() => setSelectedImage(news.main_image)}>
+                        {/* 1. Kategori & Jenjang di Bagian Paling Atas Sebelum Judul */}
+                        <div className="flex flex-wrap items-center gap-2 mb-3.5">
+                            <span className={`${newsTheme.bg} text-white px-3.5 py-1 rounded-xl text-[11px] font-black uppercase tracking-wider shadow-sm`}>
+                                {news.jenjang}
+                            </span>
+                            {news.category && (
+                                <span className="bg-slate-200/70 hover:bg-slate-200 text-slate-700 border border-slate-300/60 px-3.5 py-1 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-colors">
+                                    {news.category}
+                                </span>
+                            )}
+                        </div>
 
+                        {/* 2. Judul Berita (Di Atas Gambar) */}
+                        <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-[2.6rem] font-black text-slate-900 leading-[1.25] tracking-tight mb-4">
+                            {news.title}
+                        </h1>
+
+                        {/* 3. Tanggal Upload & Jam Upload Lengkap (Kecil di Atas Gambar) */}
+                        <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-xs sm:text-sm text-slate-500 font-medium mb-6 pb-6 border-b border-slate-200/80">
+                            <div className="flex items-center gap-1.5 text-slate-600">
+                                <Calendar className="w-4 h-4 text-slate-400" />
+                                <span>{dateTimeInfo.dateText}</span>
+                            </div>
+                            <span className="hidden sm:inline text-slate-300">•</span>
+                            <div className="flex items-center gap-1.5 bg-slate-100/90 text-slate-700 px-2.5 py-1 rounded-lg font-semibold text-xs border border-slate-200/60">
+                                <Clock className="w-3.5 h-3.5 text-islamic-green-600" />
+                                <span>{dateTimeInfo.timeText}</span>
+                            </div>
+                            <span className="hidden sm:inline text-slate-300">•</span>
+                            <div className="flex items-center gap-1.5 text-slate-500">
+                                <User className="w-4 h-4 text-slate-400" />
+                                <span>Administrator</span>
+                            </div>
+                        </div>
+
+                        {/* 4. Banner Dokumentasi Gambar (Jelas Tanpa Ketutupan Judul, Views di Sudut Atas Gambar) */}
+                        <div className="relative mb-10 group perspective-1000">
+                            {/* Main Image Container */}
+                            <div 
+                                className="rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200/80 relative z-10 aspect-video transform transition-all duration-700 hover:scale-[1.01] cursor-pointer bg-slate-900"
+                                onClick={() => setSelectedImage(news.main_image)}
+                            >
                                 {/* Image Placeholder / Skeleton */}
                                 {!imgLoaded && (
                                     <div className="absolute inset-0 bg-slate-200 animate-pulse flex items-center justify-center z-20">
@@ -160,37 +282,27 @@ const NewsDetail: React.FC = () => {
                                 <img
                                     src={news.main_image}
                                     alt={news.title}
-                                    className={`w-full h-full object-cover cursor-pointer transition-opacity duration-700 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+                                    className={`w-full h-full object-cover transition-opacity duration-700 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
                                     onLoad={() => setImgLoaded(true)}
                                 />
-                                {/* Overlay Gradient */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-500"></div>
 
-                                {/* Floating Badges */}
-                                <div className="absolute top-6 left-6 flex flex-wrap gap-2">
-                                    <span className={`${newsTheme.bg} text-white px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg backdrop-blur-md border border-white/20`}>
-                                        {news.jenjang}
-                                    </span>
-                                    <span className="bg-white/20 backdrop-blur-md text-white px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg border border-white/20">
-                                        {news.category}
-                                    </span>
+                                {/* Subtle ambient tint on hover, documentation remains clean & visible */}
+                                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300 pointer-events-none"></div>
+
+                                {/* Floating Views Badge (Di Atas Gambar / Masuk Dalam Gambar) */}
+                                <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 pointer-events-none">
+                                    <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md text-white text-xs sm:text-sm font-bold px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full border border-white/25 shadow-xl">
+                                        <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
+                                        <span>{news.views || 0} Dilihat</span>
+                                    </div>
                                 </div>
 
+                                {/* Zoom hover indicator */}
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                    <div className="bg-white/20 backdrop-blur-md p-4 rounded-full opacity-0 group-hover:opacity-100 transform scale-50 group-hover:scale-100 transition-all duration-500 border border-white/30 hidden md:block">
-                                        <ZoomIn className="text-white w-8 h-8" />
+                                    <div className="bg-black/50 backdrop-blur-md p-3.5 rounded-full opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300 border border-white/30 hidden md:flex items-center gap-2 text-white text-xs font-semibold px-4 shadow-xl">
+                                        <ZoomIn className="text-white w-4 h-4" />
+                                        <span>Klik untuk memperbesar</span>
                                     </div>
-                                </div>
-
-                                {/* Title Over Image (Futuristic Style) */}
-                                <div className="absolute bottom-0 left-0 w-full p-6 md:p-10 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                                    <div className="flex items-center gap-4 text-white/80 text-xs font-bold uppercase tracking-widest mb-4">
-                                        <span className="flex items-center gap-2 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-lg border border-white/10"><Calendar className="w-3 h-3" /> {news.date}</span>
-                                        <span className="flex items-center gap-2 bg-black/30 backdrop-blur-sm px-3 py-1 rounded-lg border border-white/10"><Eye className="w-3 h-3" /> {news.views} views</span>
-                                    </div>
-                                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-white leading-tight drop-shadow-md">
-                                        {news.title}
-                                    </h1>
                                 </div>
                             </div>
 
@@ -281,17 +393,24 @@ const NewsDetail: React.FC = () => {
                                 {relatedNews.map(item => (
                                     <Link to={`/berita/${item.id}`} key={item.id} className="group block bg-slate-50 hover:bg-white p-4 rounded-3xl transition-all duration-300 border border-transparent hover:border-slate-100 hover:shadow-lg">
                                         <div className="flex gap-4 items-start">
-                                            <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 relative box-border shadow-sm">
-                                                <img src={item.main_image} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                            <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 relative box-border shadow-sm bg-slate-200">
+                                                <img 
+                                                    src={item.main_image} 
+                                                    alt={item.title} 
+                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=400&auto=format&fit=crop';
+                                                    }}
+                                                />
                                             </div>
-                                            <div>
-                                                <span className={`inline-block px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest text-white mb-2 ${LEVEL_CONFIG[item.jenjang]?.bg || 'bg-slate-400'}`}>
+                                            <div className="flex-1 min-w-0">
+                                                <span className={`inline-block px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest text-white mb-1.5 ${LEVEL_CONFIG[item.jenjang]?.bg || 'bg-slate-400'}`}>
                                                     {item.jenjang}
                                                 </span>
-                                                <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-islamic-green-600 transition-colors line-clamp-2 mb-2">
+                                                <h4 className="font-bold text-slate-800 text-sm leading-snug group-hover:text-islamic-green-600 transition-colors line-clamp-2 mb-1.5">
                                                     {item.title}
                                                 </h4>
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.date}</span>
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{formatShortDate(item.date)}</span>
                                             </div>
                                         </div>
                                     </Link>
