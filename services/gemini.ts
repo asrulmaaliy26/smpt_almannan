@@ -11,7 +11,7 @@ const getApiKey = (): string => {
 };
 
 const getAiClient = () => {
-  const apiKey = getApiKey();
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY || '';
   if (!apiKey || apiKey === 'PLACEHOLDER_API_KEY') {
     return null;
   }

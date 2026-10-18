@@ -25,6 +25,9 @@ jobs:
 
       - name: 🏗️ Build Project
         run: npm run build
+        env:
+          VITE_GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: 📤 Upload dist/ ke VPS
         uses: appleboy/scp-action@v0.1.7
