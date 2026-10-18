@@ -16,7 +16,7 @@ import {
   Plus,
   Trash2,
   Layers
-} from 'lucide-react';
+, Eye, X, ExternalLink } from 'lucide-react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { generateNewsArticle } from '../../services/gemini';
@@ -76,6 +76,7 @@ const CreateNews: React.FC = () => {
   };
   const [mainImage, setMainImage] = useState<File | null>(null);
   const [gallery, setGallery] = useState<File[]>([]);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Fetch categories from API
   useEffect(() => {
@@ -318,7 +319,7 @@ const CreateNews: React.FC = () => {
                   className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-slate-900 font-medium text-slate-700"
                   placeholder="Ringkasan berita dalam 1-2 kalimat..."
                   value={excerpt}
-                  onChange={(e) => setExcerpt(stripHtml(e.target.value))}
+                  onChange={(e) => setExcerpt(e.target.value)}
                 ></textarea>
               </div>
 
@@ -467,7 +468,33 @@ const CreateNews: React.FC = () => {
                   onChange={handleMainImageChange}
                 />
                 {mainImage && (
-                  <p className="text-xs text-slate-500 mt-2">File: {mainImage.name}</p>
+                  <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
+                    <div 
+                      className="relative group cursor-pointer w-14 h-14 rounded-xl overflow-hidden border border-emerald-300 shadow-sm flex-shrink-0"
+                      onClick={() => setPreviewImage(URL.createObjectURL(mainImage))}
+                      title="Klik untuk melihat foto ukuran penuh"
+                    >
+                      <img 
+                        src={URL.createObjectURL(mainImage)} 
+                        alt="Preview File Baru" 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                        <Eye className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-emerald-900 font-bold mb-0.5">📎 Gambar Utama Dipilih:</p>
+                      <p className="text-[11px] text-emerald-700 truncate max-w-xs">{mainImage.name}</p>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewImage(URL.createObjectURL(mainImage))}
+                        className="mt-1 text-xs font-bold text-emerald-800 hover:text-emerald-950 underline flex items-center gap-1 transition-colors"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> Klik untuk melihat pratinjau
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -500,7 +527,28 @@ const CreateNews: React.FC = () => {
                             onChange={(e) => handleGalleryChange(index, e)}
                           />
                           {file && (
-                            <p className="text-xs text-slate-500 mt-1 ml-1">📎 {file.name}</p>
+                            <div className="mt-2 p-2 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2">
+                              <div
+                                className="relative group cursor-pointer w-10 h-10 rounded-lg overflow-hidden border border-emerald-300 flex-shrink-0 shadow-sm"
+                                onClick={() => setPreviewImage(URL.createObjectURL(file))}
+                                title="Klik untuk melihat foto ukuran penuh"
+                              >
+                                <img src={URL.createObjectURL(file)} alt="Preview" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                                  <Eye className="w-3.5 h-3.5" />
+                                </div>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[11px] font-bold text-emerald-900 truncate">{file.name}</p>
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewImage(URL.createObjectURL(file))}
+                                  className="text-[10px] text-emerald-800 font-bold hover:underline"
+                                >
+                                  Lihat foto
+                                </button>
+                              </div>
+                            </div>
                           )}
                         </div>
                         <button
@@ -626,6 +674,50 @@ const CreateNews: React.FC = () => {
           </section>
         </div>
       </div>
+      {/* Lightbox Image Preview Modal */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div 
+            className="relative max-w-4xl max-h-[92vh] bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-white/20 p-3 flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-full flex justify-between items-center px-4 py-2 border-b border-white/10 text-white mb-2">
+              <span className="text-xs font-bold text-slate-300 flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-emerald-400" /> Pratinjau Foto Penuh
+              </span>
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewImage}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 hover:bg-white/10 rounded-xl text-slate-300 hover:text-white transition-colors flex items-center gap-1.5 text-xs font-bold"
+                  title="Buka ukuran asli di tab baru"
+                >
+                  <ExternalLink className="w-4 h-4" /> Buka Ukuran Asli
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewImage(null)}
+                  className="p-2 hover:bg-white/10 rounded-xl text-slate-300 hover:text-white transition-colors"
+                  title="Tutup"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="overflow-auto max-h-[80vh] w-full flex items-center justify-center p-2">
+              <img
+                src={previewImage}
+                alt="Preview Foto"
+                className="max-h-[75vh] max-w-full rounded-2xl object-contain shadow-2xl"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

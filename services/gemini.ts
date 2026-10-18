@@ -118,7 +118,7 @@ export interface NewsPromptContext {
   jenjang?: string;
   fakultas?: string;
   jurusan?: string;
-  images?: (File | Blob | null | undefined)[];
+  images?: (File | Blob | string | null | undefined)[];
 }
 
 // Convert File/Blob to Gemini inlineData base64 part
@@ -148,6 +148,19 @@ export const fileToGenerativePart = async (file: File | Blob): Promise<{ inlineD
   });
 };
 
+// Convert image URL to Gemini inlineData base64 part
+export const urlToGenerativePart = async (url: string): Promise<{ inlineData: { data: string; mimeType: string } } | null> => {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await fileToGenerativePart(blob);
+  } catch (e) {
+    console.warn('Failed to fetch image URL for AI analysis:', url, e);
+    return null;
+  }
+};
+
 export const generateNewsArticle = async (
   contextOrDescription: string | NewsPromptContext
 ): Promise<string> => {
@@ -158,12 +171,18 @@ export const generateNewsArticle = async (
     ? { briefDescription: contextOrDescription }
     : (contextOrDescription || {});
 
-  // 1. Convert all valid images to base64 inlineData
+  // 1. Convert all valid images (File, Blob, or URL string) to base64 inlineData
   const imageParts: { inlineData: { data: string; mimeType: string } }[] = [];
   if (ctx.images && Array.isArray(ctx.images)) {
     for (const img of ctx.images) {
-      if (img && (img instanceof File || img instanceof Blob)) {
+      if (!img) continue;
+      if (img instanceof File || img instanceof Blob) {
         const part = await fileToGenerativePart(img);
+        if (part) {
+          imageParts.push(part);
+        }
+      } else if (typeof img === 'string' && img.trim()) {
+        const part = await urlToGenerativePart(img.trim());
         if (part) {
           imageParts.push(part);
         }
@@ -176,7 +195,16 @@ export const generateNewsArticle = async (
   promptParts.push(`Anda adalah jurnalis dan humas profesional untuk SMP Terpadu Al Mannan. Tugas Anda adalah menyusun artikel berita kegiatan yang lengkap, menarik, mendalam, dan bernuansa sekolah Islam unggul.`);
 
   if (imageParts.length > 0) {
-    promptParts.push(`\n[ANALISIS FOTO DOKUMENTASI]:\nAda ${imageParts.length} foto kegiatan asli yang dilampirkan. Cermati detail visual di foto-foto tersebut (suasana kegiatan, orang/santri/tokoh/pembicara yang hadir, ekspresi wajah, spanduk/backdrop, plakat/trofi, dekorasi, dan aktivitas yang sedang berlangsung). Integrasikan detail nyata dari foto ini ke dalam narasi artikel berita agar terasa hidup, faktual, dan otentik.`);
+    promptParts.push(`\n[ANALISIS FOTO DOKUMENTASI & POSTER - SANGAT PENTING]:
+Ada ${imageParts.length} foto kegiatan / poster dokumentasi yang dilampirkan.
+INSTRUKSI KHUSUS ANALISIS GAMBAR:
+1. BACA SELURUH TEKS YANG TERCANTUM PADA SETIAP FOTO/POSTER!
+2. Jika foto berupa poster ucapan selamat (congrats), piagam, atau dokumentasi prestasi:
+   - WAJIB catat dan sebutkan SEMUA NAMA LENGKAP SISWA/SANTRI yang tercantum.
+   - WAJIB catat dan sebutkan KATEGORI/PREDIKAT JUARA masing-masing (misal: Juara I, Juara II, Juara III, Juara Harapan I, II, III).
+   - Cantumkan cabang lomba, kelas siswa, dan nama penyelenggara (seperti DPP AGPAII, Kemenag, dinas, dsb) jika tertera.
+   - Sertakan semboyan/moto sekolah yang tertulis di poster (seperti "Mendidik Dengan Hati, Membangun Generasi Qur'ani").
+3. Susun daftar rincian juara tersebut secara rapi dan terstruktur di dalam artikel berita menggunakan tag <ul> dan <li> dengan huruf tebal <strong> pada nama siswa dan juaranya.`);
   }
 
   const baseItems: string[] = [];
@@ -206,12 +234,14 @@ export const generateNewsArticle = async (
     promptParts.push('\nBuatkan artikel berita kegiatan terkini yang menginspirasi.');
   }
 
-  promptParts.push(`\n[KETENTUAN FORMAT OUTPUT]:
-1. Awali dengan judul berita yang menarik dan relevan di dalam tag <h3>Judul Berita</h3>.
-2. Tulis isi berita minimal 3-5 paragraf yang mengalir rapi dengan tag <p>.
-3. Gunakan tag <strong> untuk nama orang, prestasi, atau poin penting, serta <em> jika ada kutipan/sambutan.
-4. JANGAN sertakan tag <html>, <head>, atau <body>. Jangan gunakan wrapper markdown seperti \`\`\`html.
-5. Gunakan bahasa jurnalistik formal, santun, inspiratif, dan edukatif.`);
+  promptParts.push(`\n[KETENTUAN STRUKTUR DAN FORMAT ARTIKEL BERITA]:
+1. Awali dengan judul berita yang kuat, menarik, dan representatif di dalam tag <h3>Judul Berita</h3>.
+2. Paragraf 1 (Pembuka): Pembuka naratif yang hangat dan penuh rasa syukur atas capaian luar biasa, menyebutkan nama kegiatan dan lembaga penyelenggara.
+3. Paragraf 2 (Latar Belakang & Persaingan): Gambaran umum kompetisi, ketatnya persaingan antar sekolah/peserta, dan kesiapan delegasi santri.
+4. Paragraf 3 (Daftar Juara & Pemenang): Rincian lengkap prestasi para santri dalam daftar terstruktur (gunakan <ul><li> dengan <strong> untuk nama santri dan juaranya).
+5. Paragraf 4 (Apresiasi & Sambutan): Kutipan ucapan selamat dan rasa bangga dari pimpinan sekolah atau guru pembimbing dengan tag <em>.
+6. Paragraf 5 (Penutup & Doa): Harapan, motivasi bagi santri lain, doa keberkahan, serta penegasan komitmen mencetak generasi Qur'ani yang unggul.
+7. Format output murni HTML. JANGAN sertakan tag <html>, <head>, atau <body>. Jangan gunakan wrapper markdown seperti \`\`\`html.`);
 
   const promptText = promptParts.join('\n');
   const contentsPayload: any[] = [...imageParts, { text: promptText }];
