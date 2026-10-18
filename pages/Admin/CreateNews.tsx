@@ -26,6 +26,28 @@ import { LevelContext } from '../../App';
 import { useLevelConfig } from '../../hooks/useLevelConfig';
 import { useToast } from '../../components/ToastProvider';
 
+// Helper to strip HTML tags and decode entities into plain text
+const stripHtml = (html?: string) => {
+  if (!html) return '';
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#[0-9]+;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+// Helper to extract clean excerpt from content body (skips first heading)
+const extractCleanExcerpt = (contentHtml?: string) => {
+  if (!contentHtml) return '';
+  const contentWithoutHeading = contentHtml.replace(/^<h[1-6][^>]*>.*?<\/h[1-6]>/is, '');
+  const plainText = stripHtml(contentWithoutHeading || contentHtml);
+  return plainText.substring(0, 160).trim() + (plainText.length > 160 ? '...' : '');
+};
+
 const CreateNews: React.FC = () => {
   const navigate = useNavigate();
   const { activeLevel } = useContext(LevelContext);
@@ -74,27 +96,56 @@ const CreateNews: React.FC = () => {
     loadCategories();
   }, []);
 
-  const handleSmartAIWrite = async () => {
-    if (!briefSketch.trim()) {
-      toast.warning("Masukkan poin-poin kegiatan terlebih dahulu.");
+    const handleSmartAIWrite = async () => {
+    const validGallery = gallery.filter((f): f is File => f !== null && f !== undefined);
+    const allImages: File[] = [];
+    if (mainImage) allImages.push(mainImage);
+    allImages.push(...validGallery);
+
+    if (!briefSketch.trim() && !title.trim() && !excerpt.trim() && allImages.length === 0) {
+      toast.warning("Masukkan judul, ringkasan, unggah foto, atau ketik poin kegiatan untuk AI.");
       return;
     }
 
     setIsGenerating(true);
     try {
-      const result = await generateNewsArticle(briefSketch);
+      const result = await generateNewsArticle({
+        briefDescription: briefSketch.trim(),
+        title: title.trim(),
+        category: category,
+        excerpt: excerpt.trim(),
+        jenjang: jenjang || (typeof DEFAULT_JENJANG !== 'undefined' ? DEFAULT_JENJANG : undefined),
+        fakultas: typeof fakultas !== 'undefined' ? fakultas : undefined,
+        jurusan: typeof jurusan !== 'undefined' ? jurusan : undefined,
+        images: allImages,
+      });
+
+      if (result.startsWith("Gagal") || result.startsWith("Maaf")) {
+        toast.error(result);
+        return;
+      }
+
       setContent(result);
-      if (!title) {
-        const titleSuggest = result.split('\n')[0].substring(0, 100).replace(/judul[:\s]*/i, '');
-        setTitle(titleSuggest || title);
+
+      // Auto-extract title if title is empty or default
+      const match = result.match(/<h3>(.*?)<\/h3>/i);
+      if (match && match[1] && (!title.trim() || title === 'Judul Baru')) {
+        setTitle(stripHtml(match[1]));
       }
-      // Generate excerpt from first 150 characters of content
-      if (!excerpt) {
-        const excerptText = result.substring(0, 150).replace(/\n/g, ' ') + '...';
-        setExcerpt(excerptText);
+
+      // Auto-generate clean excerpt from content body
+      const cleanExcerpt = extractCleanExcerpt(result);
+      if (!excerpt.trim() || excerpt.includes('<')) {
+        setExcerpt(cleanExcerpt);
       }
-    } catch (error) {
-      toast.error("Maaf, AI gagal menghasilkan berita. Silakan coba lagi.");
+
+      toast.success(
+        allImages.length > 0
+          ? `Berhasil membuat berita berdasarkan analisis ${allImages.length} foto & konteks kegiatan!`
+          : "Berita berhasil dibuat oleh AI!"
+      );
+    } catch (error: any) {
+      toast.error("Maaf, AI gagal menghasilkan berita: " + (error?.message || "Silakan coba lagi"));
     } finally {
       setIsGenerating(false);
     }
@@ -138,7 +189,7 @@ const CreateNews: React.FC = () => {
     }
 
     // Auto-generate excerpt if empty
-    let finalExcerpt = excerpt.trim();
+    let finalExcerpt = stripHtml(excerpt);
     if (!finalExcerpt) {
       const strippedContent = content.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#[0-9]+;/g, ' ').replace(/\s+/g, ' ').trim();
       finalExcerpt = strippedContent.substring(0, 150) + (strippedContent.length > 150 ? '...' : '');
@@ -239,16 +290,35 @@ const CreateNews: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
-                  <AlignLeft className="w-4 h-4 text-slate-400" /> Ringkasan Singkat
-                </label>
+                            <div>
+                <div className="flex items-center justify-between mb-4">
+                  <label className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest">
+                    <AlignLeft className="w-4 h-4 text-slate-400" /> Ringkasan Singkat
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const sourceText = content || excerpt;
+                      if (!sourceText.trim()) {
+                        toast.warning("Konten masih kosong.");
+                        return;
+                      }
+                      setExcerpt(extractCleanExcerpt(sourceText));
+                      toast.success("Ringkasan berhasil dibersihkan / diekstrak!");
+                    }}
+                    className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1.5 transition-colors bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-200 shadow-sm"
+                    title="Bersihkan tag HTML dan ekstrak ringkasan dari konten"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Bersihkan / Ekstrak dari Konten
+                  </button>
+                </div>
                 <textarea
                   rows={3}
                   className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-slate-900 font-medium text-slate-700"
                   placeholder="Ringkasan berita dalam 1-2 kalimat..."
                   value={excerpt}
-                  onChange={(e) => setExcerpt(e.target.value)}
+                  onChange={(e) => setExcerpt(stripHtml(e.target.value))}
                 ></textarea>
               </div>
 
@@ -478,30 +548,80 @@ const CreateNews: React.FC = () => {
           </section>
         </div>
 
-        <div className="space-y-8">
-          <section className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden">
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-6">
-                <Sparkles className="w-6 h-6 text-islamic-gold-500" />
-                <h3 className="text-xl font-black">AI Auto-Write</h3>
-              </div>
-              <p className="text-xs text-slate-400 mb-8 leading-relaxed">
-                Masukkan poin-poin kegiatan, AI akan memprosesnya menjadi artikel formal sesuai jenjang pendidikan yang dipilih.
+                <div className="space-y-8">
+          <section className="bg-slate-900 rounded-[3rem] p-8 sm:p-10 text-white shadow-2xl relative overflow-hidden border border-white/10">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-black flex items-center gap-2.5">
+                <Sparkles className="w-6 h-6 text-islamic-gold-500 animate-pulse" /> AI News Assistant
+              </h3>
+              <span className="text-[10px] bg-white/10 text-islamic-gold-400 font-bold px-3 py-1 rounded-full border border-white/10 uppercase tracking-widest">
+                Multimodal AI
+              </span>
+            </div>
+            
+            <p className="text-xs text-islamic-green-200 mb-6 leading-relaxed">
+              AI otomatis membaca <strong>semua foto yang diunggah</strong>, judul, ringkasan, dan kategori sebagai <em>base prompt</em>.
+            </p>
+
+            {/* Base Prompt Status Indicator */}
+            <div className="bg-black/20 rounded-2xl p-4 mb-6 border border-white/10 space-y-2 text-xs">
+              <p className="font-bold text-islamic-gold-400 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                <CheckCircle className="w-3.5 h-3.5" /> Konteks Dasar (Base Prompt)
               </p>
-              <textarea
-                rows={6}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-xs outline-none focus:bg-white/10 transition-all mb-6"
-                placeholder="Contoh: Santri MI juara lomba kaligrafi tingkat kota..."
-                value={briefSketch}
-                onChange={(e) => setBriefSketch(e.target.value)}
-              ></textarea>
-              <button
-                onClick={handleSmartAIWrite}
-                disabled={isGenerating}
-                className="w-full flex items-center justify-center gap-3 bg-white text-slate-900 py-4 rounded-2xl font-black hover:bg-slate-100 disabled:opacity-50"
-              >
-                {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />} Generate Konten
-              </button>
+              <div className="space-y-1.5 text-slate-200">
+                <p className="truncate"><span className="text-white/60">Judul:</span> {title.trim() ? title : <span className="text-white/40 italic">Otomatis dari AI</span>}</p>
+                <p><span className="text-white/60">Kategori:</span> <span className="font-semibold text-emerald-300">{category || 'Kegiatan'}</span></p>
+                <p className="flex items-center gap-2">
+                  <span className="text-white/60">Foto Terdeteksi:</span>
+                  <span className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${
+                    (mainImage ? 1 : 0) + gallery.filter(Boolean).length > 0
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      : 'bg-white/10 text-white/50'
+                  }`}>
+                    📷 {(mainImage ? 1 : 0) + gallery.filter(Boolean).length} foto siap dianalisis
+                  </span>
+                </p>
+                {excerpt.trim() && (
+                  <p className="line-clamp-2 text-white/70 italic text-[11px]">
+                    "{excerpt}"
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Additional Prompt Input */}
+            <label className="text-xs font-bold text-slate-300 block mb-2">
+              Poin / Instruksi Tambahan (Opsional)
+            </label>
+            <textarea
+              rows={4}
+              className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-xs sm:text-sm text-white placeholder-white/40 outline-none focus:ring-2 focus:ring-islamic-gold-500 mb-6"
+              placeholder="Tambahkan poin khusus jika ada (contoh: 'Tekankan pesan dari kepala sekolah', 'Sebutkan juara diraih oleh...'). Jika kosong, AI akan langsung menganalisis foto dan data di atas..."
+              value={briefSketch}
+              onChange={(e) => setBriefSketch(e.target.value)}
+            ></textarea>
+
+            <button
+              onClick={handleSmartAIWrite}
+              disabled={isGenerating}
+              className="w-full bg-islamic-gold-500 text-slate-950 font-black py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-islamic-gold-400 transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin text-slate-950" />
+                  <span>AI Menganalisis Foto & Menulis...</span>
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-5 h-5 text-slate-950" />
+                  <span>Buat Berita dengan AI</span>
+                </>
+              )}
+            </button>
+
+            <div className="mt-6 flex items-center justify-between text-[10px] font-bold text-islamic-green-300">
+              <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5" /> Analisis Visual Gambar</span>
+              <span>Hasil dapat diedit</span>
             </div>
           </section>
         </div>

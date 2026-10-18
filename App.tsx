@@ -78,7 +78,7 @@ const App: React.FC = () => {
     setChatMessage('');
     setIsTyping(true);
     try {
-      const botResponse = await getSchoolAssistantResponse(userMsg);
+      const botResponse = await getSchoolAssistantResponse(userMsg, chatHistory);
       setChatHistory(prev => [...prev, { role: 'bot', text: botResponse }]);
     } catch (error) {
       setChatHistory(prev => [...prev, { role: 'bot', text: 'Maaf, sedang ada kendala teknis.' }]);
@@ -165,7 +165,7 @@ const App: React.FC = () => {
                               <MessageCircle className="text-islamic-green-600 w-8 h-8" />
                             </div>
                             <p className="text-slate-800 font-bold mb-1">Assalamu'alaikum!</p>
-                            <p className="text-slate-400 text-xs">Ada yang bisa saya bantu terkait Unggul Bangsa?</p>
+                            <p className="text-slate-400 text-xs">Ada yang bisa saya bantu terkait SMPT Al Mannan?</p>
                           </div>
                         )}
                         {chatHistory.map((chat, idx) => (

@@ -194,7 +194,7 @@ const NewsDetail: React.FC = () => {
             navigator.share({
                 title: news.title || 'Berita SMPT Al-Mannan',
                 url: window.location.href
-            }).catch(() => {});
+            }).catch(() => { });
         } else {
             navigator.clipboard.writeText(window.location.href);
             alert('Tautan berita berhasil disalin ke clipboard!');
@@ -257,47 +257,59 @@ const NewsDetail: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* 4. Main Image Container */}
-                            <div 
-                                className="relative rounded-2xl overflow-hidden aspect-video bg-slate-900 shadow-md group cursor-pointer"
-                                onClick={() => setSelectedImage(news.main_image || '/gedungdepan.jpg')}
-                            >
-                                {!imgLoaded && (
-                                    <div className="absolute inset-0 bg-slate-200 animate-pulse flex items-center justify-center z-10">
-                                        <div className="w-10 h-10 border-4 border-slate-300 border-t-emerald-700 rounded-full animate-spin"></div>
+                            {/* 4. Banner Dokumentasi Gambar (Jelas Tanpa Ketutupan Judul, Views di Sudut Atas Gambar) */}
+                            <div className="relative mb-10 group perspective-1000">
+                                {/* Main Image Container (Full tanpa terpotong, views di dalam gambar) */}
+                                <div
+                                    className="rounded-[2.5rem] md:rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200/80 relative z-10 min-h-[260px] flex items-center justify-center transform transition-all duration-700 hover:scale-[1.01] cursor-pointer bg-slate-950"
+                                    onClick={() => setSelectedImage(news.main_image || '/gedungdepan.jpg')}
+                                >
+                                    {/* Ambient blurred background layer so non-16:9 images blend seamlessly */}
+                                    <img
+                                        src={news.main_image || '/gedungdepan.jpg'}
+                                        alt=""
+                                        aria-hidden="true"
+                                        className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-35 scale-110 pointer-events-none"
+                                    />
+
+                                    {/* Image Placeholder / Skeleton */}
+                                    {!imgLoaded && (
+                                        <div className="absolute inset-0 bg-slate-200 animate-pulse flex items-center justify-center z-10">
+                                            <div className="w-10 h-10 border-4 border-slate-300 border-t-emerald-700 rounded-full animate-spin"></div>
+                                        </div>
+                                    )}
+                                    <img
+                                        src={news.main_image || '/gedungdepan.jpg'}
+                                        alt={news.title}
+                                        className={`relative z-10 w-full h-auto max-h-[750px] object-contain mx-auto block transition-all duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+                                        onLoad={() => setImgLoaded(true)}
+                                    />
+
+                                    {/* Subtle ambient tint on hover, documentation remains clean & visible */}
+                                    <div className="absolute inset-0 z-10 bg-black/10 group-hover:bg-black/20 transition-colors duration-300 pointer-events-none"></div>
+
+                                    {/* Floating Views Badge inside image */}
+                                    <div className="absolute top-4 right-4 z-20 pointer-events-none">
+                                        <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md text-white text-xs sm:text-sm font-bold px-3.5 py-1.5 rounded-full border border-white/20 shadow-lg">
+                                            <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                                            <span>{news.views || 0} Dilihat</span>
+                                        </div>
                                     </div>
-                                )}
-                                <img
-                                    src={news.main_image || '/gedungdepan.jpg'}
-                                    alt={news.title}
-                                    className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-500 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
-                                    onLoad={() => setImgLoaded(true)}
-                                />
 
-                                {/* Ambient overlay */}
-                                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors pointer-events-none"></div>
-
-                                {/* Floating Views Badge inside image */}
-                                <div className="absolute top-4 right-4 z-20 pointer-events-none">
-                                    <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md text-white text-xs sm:text-sm font-bold px-3.5 py-1.5 rounded-full border border-white/20 shadow-lg">
-                                        <Eye className="w-3.5 h-3.5 text-emerald-400" />
-                                        <span>{news.views || 0} Dilihat</span>
-                                    </div>
-                                </div>
-
-                                {/* Zoom hover indicator */}
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                    <div className="bg-black/50 backdrop-blur-md p-3 rounded-full opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300 border border-white/30 hidden md:flex items-center gap-2 text-white text-xs font-semibold px-4 shadow-xl">
-                                        <ZoomIn className="text-white w-4 h-4" />
-                                        <span>Klik untuk memperbesar</span>
+                                    {/* Zoom hover indicator */}
+                                    <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+                                        <div className="bg-black/50 backdrop-blur-md p-3.5 rounded-full opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all duration-300 border border-white/30 hidden md:flex items-center gap-2 text-white text-xs font-semibold px-4 shadow-xl">
+                                            <ZoomIn className="text-white w-4 h-4" />
+                                            <span>Klik untuk memperbesar</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Article Content */}
-                            <div className="ql-snow">
-                                <div
-                                    className="ql-editor font-sans text-sm sm:text-base text-slate-700 leading-relaxed !p-0 !overflow-visible
+                                {/* Article Content */}
+                                <div className="ql-snow">
+                                    <div
+                                        className="ql-editor font-sans text-sm sm:text-base text-slate-700 leading-relaxed !p-0 !overflow-visible
                                     [&_p]:!mb-4
                                     [&_h1]:font-black [&_h1]:text-slate-900 [&_h1]:!mb-3 [&_h1]:!mt-6
                                     [&_h2]:font-black [&_h2]:text-slate-900 [&_h2]:!mb-3 [&_h2]:!mt-6
@@ -306,29 +318,29 @@ const NewsDetail: React.FC = () => {
                                     [&_a]:text-emerald-700 [&_a]:underline hover:[&_a]:text-emerald-800
                                     [&_strong]:font-bold [&_strong]:text-slate-900
                                     [&_img]:rounded-2xl [&_img]:shadow-md [&_img]:w-full [&_img]:!my-6"
-                                    dangerouslySetInnerHTML={{
-                                        __html: (news.content || '')
-                                            .replace(/&nbsp;/g, ' ')
-                                            .replace(/\u00A0/g, ' ')
-                                            .replace(/\n/g, '</p><p>')
-                                            .replace(/<p><\/p>/g, '<p><br></p>')
-                                            .replace(/<p>\s*<\/p>/g, '<p><br></p>')
-                                    }}
-                                />
-                            </div>
+                                        dangerouslySetInnerHTML={{
+                                            __html: (news.content || '')
+                                                .replace(/&nbsp;/g, ' ')
+                                                .replace(/\u00A0/g, ' ')
+                                                .replace(/\n/g, '</p><p>')
+                                                .replace(/<p><\/p>/g, '<p><br></p>')
+                                                .replace(/<p>\s*<\/p>/g, '<p><br></p>')
+                                        }}
+                                    />
+                                </div>
 
-                            {/* Footer Author Info */}
-                            <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
-                                        <User className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Diterbitkan Oleh</p>
-                                        <p className="text-xs font-bold text-slate-800">{authorName}</p>
+                                {/* Footer Author Info */}
+                                <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                                            <User className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Diterbitkan Oleh</p>
+                                            <p className="text-xs font-bold text-slate-800">{authorName}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
                         </article>
 
                         {/* Gallery Section */}

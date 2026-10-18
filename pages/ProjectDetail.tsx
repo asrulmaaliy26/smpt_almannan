@@ -113,20 +113,25 @@ const ProjectDetail: React.FC = () => {
                      </div>
                   </div>
 
-                  <div className="relative rounded-3xl overflow-hidden mb-10 shadow-lg aspect-video bg-slate-100">
+                  <div className="relative rounded-3xl overflow-hidden mb-10 shadow-lg bg-slate-950 flex items-center justify-center min-h-[260px]">
+                     <img
+                        src={project.imageUrl}
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-35 scale-110 pointer-events-none"
+                     />
                      {!imgLoaded && (
-                        <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="absolute inset-0 flex items-center justify-center z-10">
                            <div className="w-12 h-12 border-4 border-slate-300 border-t-blue-600 rounded-full animate-spin"></div>
                         </div>
                      )}
                      <img
                         src={project.imageUrl}
-                        className={`w-full h-full object-cover transition-opacity duration-700 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+                        className={`relative z-10 w-full h-auto max-h-[750px] object-contain mx-auto block transition-opacity duration-700 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
                         alt={project.title}
                         onLoad={() => setImgLoaded(true)}
                      />
                   </div>
-
                   <div className="space-y-8 text-slate-700">
                      <div>
                         <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2"><Rocket className="w-5 h-5 text-blue-600" /> Deskripsi Projek</h3>
